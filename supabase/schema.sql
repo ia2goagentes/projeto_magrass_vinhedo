@@ -217,3 +217,66 @@ create policy "goals_insert_gestor"
 -- 2. Rode:
 --    update public.profiles set role = 'gestor' where email = 'voce@exemplo.com';
 -- ---------------------------------------------------------------------------
+
+-- ---------------------------------------------------------------------------
+-- Phase 1: Lead Ingestion (v1.1)
+-- ---------------------------------------------------------------------------
+
+create table if not exists public.leads (
+  id                uuid primary key default gen_random_uuid(),
+  lead_source_id    text unique,
+  name              text not null,
+  whatsapp          text not null,
+  form_answers      jsonb not null default '{}',
+  raw_payload       jsonb not null default '{}',
+  status            text not null default 'novo'
+                    check (status in (
+                      'novo', 'contatado', 'agendado',
+                      'compareceu', 'no_show',
+                      'comprou', 'perdido', 'sem_interesse'
+                    )),
+  notes             text,
+  status_updated_at timestamptz,
+  source            text not null default 'make_webhook',
+  created_at        timestamptz not null default now(),
+  updated_at        timestamptz not null default now()
+);
+
+create or replace function public.set_updated_at()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists leads_updated_at on public.leads;
+create trigger leads_updated_at
+  before update on public.leads
+  for each row execute function public.set_updated_at();
+
+alter table public.leads enable row level security;
+
+drop policy if exists "leads_select_sdr_gestor" on public.leads;
+create policy "leads_select_sdr_gestor"
+  on public.leads for select to authenticated
+  using (public.current_role() in ('sdr', 'gestor'));
+
+drop policy if exists "leads_update_sdr_gestor" on public.leads;
+create policy "leads_update_sdr_gestor"
+  on public.leads for update to authenticated
+  using (public.current_role() in ('sdr', 'gestor'))
+  with check (public.current_role() in ('sdr', 'gestor'));
+
+-- No INSERT policy — webhook uses service-role key (RLS bypass).
+-- No DELETE policy — leads are archived via status, never deleted.
+
+create or replace view public.lead_funnel_by_status as
+select
+  status,
+  count(*)::integer as lead_count
+from public.leads
+where created_at >= date_trunc('month', now())
+group by status;
+
+alter publication supabase_realtime add table public.leads;
