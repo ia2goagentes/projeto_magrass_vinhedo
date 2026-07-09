@@ -4,8 +4,18 @@ import { NextResponse, type NextRequest } from "next/server";
 const GESTOR_ONLY_PATHS = ["/metas", "/usuarios", "/anuncios"];
 const SDR_GESTOR_PATHS = ["/lancamento"];
 const PUBLIC_PATHS = ["/login", "/signup", "/auth/callback"];
+const WEBHOOK_PATHS = ["/api/leads/ingest"];
 
 export async function middleware(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+
+  // WEBHOOK_PATHS must bypass Supabase auth entirely — otherwise unauthenticated
+  // POSTs from Make/webhooks receive a 302 redirect to /login and leads are lost
+  // silently. Bypass MUST be the first code — before createServerClient is called.
+  if (WEBHOOK_PATHS.some((p) => path.startsWith(p))) {
+    return NextResponse.next({ request });
+  }
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -28,7 +38,6 @@ export async function middleware(request: NextRequest) {
   );
 
   const { data: { user } } = await supabase.auth.getUser();
-  const path = request.nextUrl.pathname;
   const isPublicPath = PUBLIC_PATHS.some((p) => path.startsWith(p));
 
   if (!user) {
