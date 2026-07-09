@@ -28,7 +28,7 @@
   4. The `answers` column stores the three Meta form question responses as JSONB — no separate column per question exists in the schema
   5. A request to `/api/leads/ingest` without the correct secret header returns `401` without redirecting (middleware bypass confirmed working)
 **Plans**: 2 plans
-- [ ] 01-01-PLAN.md — Infrastructure Foundation (schema DDL, types, service client, middleware bypass, env vars) [wave 1]
+- [x] 01-01-PLAN.md — Infrastructure Foundation (schema DDL, types, service client, middleware bypass, env vars) [wave 1]
 - [ ] 01-02-PLAN.md — Webhook Endpoint (POST /api/leads/ingest + curl smoke suite) [wave 2, depends on 01-01]
 
 ### Phase 2: Dashboard CRM Integration + Visual Upgrade

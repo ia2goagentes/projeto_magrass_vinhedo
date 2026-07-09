@@ -10,10 +10,10 @@
 
 ### Lead Ingestion (INGST)
 
-- [ ] **INGST-01**: Sistema aceita POST no endpoint `/api/leads/ingest` com header `x-webhook-secret` e insere lead na tabela `leads` (inclui middleware bypass e service-role client)
-- [ ] **INGST-02**: Lead duplicado (mesmo `lead_source_id` do Meta) é silenciosamente ignorado — Make pode fazer retry sem criar duplicatas
-- [ ] **INGST-03**: Número de WhatsApp é normalizado para apenas dígitos no momento da ingestão
-- [ ] **INGST-04**: Respostas do formulário Meta são armazenadas como JSONB sem colunas fixas por pergunta
+- [x] **INGST-01**: Sistema aceita POST no endpoint `/api/leads/ingest` com header `x-webhook-secret` e insere lead na tabela `leads` (inclui middleware bypass e service-role client)
+- [x] **INGST-02**: Lead duplicado (mesmo `lead_source_id` do Meta) é silenciosamente ignorado — Make pode fazer retry sem criar duplicatas
+- [x] **INGST-03**: Número de WhatsApp é normalizado para apenas dígitos no momento da ingestão
+- [x] **INGST-04**: Respostas do formulário Meta são armazenadas como JSONB sem colunas fixas por pergunta
 
 ### CRM de Leads (CRM)
 
