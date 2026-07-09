@@ -27,7 +27,9 @@
   3. A WhatsApp number sent as `+55 (11) 9 1234-5678` is stored as `5511912345678` (digits only)
   4. The `answers` column stores the three Meta form question responses as JSONB — no separate column per question exists in the schema
   5. A request to `/api/leads/ingest` without the correct secret header returns `401` without redirecting (middleware bypass confirmed working)
-**Plans**: TBD
+**Plans**: 2 plans
+- [ ] 01-01-PLAN.md — Infrastructure Foundation (schema DDL, types, service client, middleware bypass, env vars) [wave 1]
+- [ ] 01-02-PLAN.md — Webhook Endpoint (POST /api/leads/ingest + curl smoke suite) [wave 2, depends on 01-01]
 
 ### Phase 2: Dashboard CRM Integration + Visual Upgrade
 **Goal**: The dashboard displays agendamentos, comparecimentos, and fechamentos derived from lead statuses — not re-entered manually — with no double-counting and with a polished, fast-loading visual presentation
@@ -72,7 +74,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Schema + Webhook Foundation | 0/? | Not started | - |
+| 1. Schema + Webhook Foundation | 0/2 | Not started | - |
 | 2. Dashboard CRM Integration + Visual Upgrade | 0/? | Not started | - |
 | 3. CRM Lead Management UI | 0/? | Not started | - |
 | 4. UX Fixes | 0/? | Not started | - |
