@@ -1,17 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ChevronRight, Moon, Sun } from "lucide-react";
 
-export function ThemeToggle({ variant = "compact" }: { variant?: "compact" | "expanded" }) {
-  const [isDark, setIsDark] = useState(false);
+function getInitialDark(): boolean {
+  // During SSR there is no document — default to false (light).
+  // The layout's beforeInteractive script sets the correct class before
+  // React hydrates, so reading the class here gives the right value.
+  if (typeof document === "undefined") return false;
+  return document.documentElement.classList.contains("dark");
+}
 
-  useEffect(() => {
-    function sync() {
-      setIsDark(document.documentElement.classList.contains("dark"));
-    }
-    sync();
-  }, []);
+export function ThemeToggle({ variant = "compact" }: { variant?: "compact" | "expanded" }) {
+  const [isDark, setIsDark] = useState<boolean>(getInitialDark);
 
   function toggle() {
     const next = !isDark;

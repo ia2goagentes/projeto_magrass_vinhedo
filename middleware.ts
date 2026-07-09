@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const GESTOR_ONLY_PATHS = ["/metas", "/usuarios", "/anuncios"];
 const SDR_GESTOR_PATHS = ["/lancamento"];
-const PUBLIC_PATHS = ["/login", "/signup", "/auth/callback"];
+const PUBLIC_PATHS = ["/login", "/signup", "/auth/callback", "/forgot-password", "/reset-password"];
 const WEBHOOK_PATHS = ["/api/leads/ingest"];
 
 export async function middleware(request: NextRequest) {

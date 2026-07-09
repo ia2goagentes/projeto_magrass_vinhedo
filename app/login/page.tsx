@@ -65,7 +65,13 @@ export default function LoginPage() {
         {status === "error" && <p className="text-sm text-status-critical">{errorMessage}</p>}
       </form>
 
-      <p className="mt-4 text-center text-sm text-ink-secondary">
+      <p className="mt-3 text-right text-sm">
+        <Link href="/forgot-password" className="text-ink-secondary hover:text-accent hover:underline">
+          Esqueci minha senha
+        </Link>
+      </p>
+
+      <p className="mt-3 text-center text-sm text-ink-secondary">
         Não tem conta?{" "}
         <Link href="/signup" className="font-medium text-accent hover:underline">
           Criar cadastro

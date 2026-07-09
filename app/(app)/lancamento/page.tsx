@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { toDateKey } from "@/lib/dates";
 
@@ -39,12 +39,16 @@ const inputClass =
   "mt-1 w-full rounded-lg border border-border-hairline bg-surface-card px-3 py-2 text-sm text-ink-primary outline-none focus:border-accent";
 
 export default function LancamentoPage() {
-  const [date, setDate] = useState(toDateKey(new Date()));
+  const today = toDateKey(new Date());
+  const [date, setDate] = useState(today);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
+  const [validationError, setValidationError] = useState("");
+  // UX-02: track whether an entry already exists for the selected date
+  const [entryExists, setEntryExists] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -53,6 +57,7 @@ export default function LancamentoPage() {
       setLoading(true);
       setSavedAt(null);
       setErrorMessage("");
+      setValidationError("");
 
       const supabase = createClient();
       const { data, error } = await supabase
@@ -65,7 +70,9 @@ export default function LancamentoPage() {
 
       if (error) {
         setErrorMessage(error.message);
+        setEntryExists(false);
       } else if (data) {
+        setEntryExists(true);
         setForm({
           leads_count: String(data.leads_count),
           appointments_count: String(data.appointments_count),
@@ -76,6 +83,7 @@ export default function LancamentoPage() {
           revenue_amount: String(data.revenue_amount),
         });
       } else {
+        setEntryExists(false);
         setForm(EMPTY_FORM);
       }
       setLoading(false);
@@ -87,10 +95,33 @@ export default function LancamentoPage() {
     };
   }, [date]);
 
+  // UX-03: validate attendance counts against appointments
+  function validate(): boolean {
+    const appointments = Number(form.appointments_count) || 0;
+    const attendances = Number(form.attendances_count) || 0;
+    const noShows = Number(form.no_shows_count) || 0;
+    const rescheduled = Number(form.rescheduled_count) || 0;
+
+    const total = attendances + noShows + rescheduled;
+
+    if (total > appointments) {
+      setValidationError(
+        `A soma de comparecimentos (${attendances}), no-shows (${noShows}) e remarcados (${rescheduled}) = ${total}, que excede o total de agendamentos (${appointments}).`
+      );
+      return false;
+    }
+
+    setValidationError("");
+    return true;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSaving(true);
     setErrorMessage("");
+
+    if (!validate()) return;
+
+    setSaving(true);
 
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -118,8 +149,13 @@ export default function LancamentoPage() {
       return;
     }
 
+    setEntryExists(true);
     setSavedAt(new Date().toLocaleTimeString("pt-BR"));
   }
+
+  // UX-02: only show the overwrite warning when the selected date is today
+  // and an entry already exists (user may be editing historical dates too)
+  const showOverwriteWarning = entryExists && date === today;
 
   return (
     <div className="max-w-2xl">
@@ -140,6 +176,17 @@ export default function LancamentoPage() {
           />
         </div>
 
+        {/* UX-02: overwrite warning banner */}
+        {!loading && showOverwriteWarning && (
+          <div className="mt-4 flex items-start gap-2 rounded-lg border border-status-warning/40 bg-status-warning/10 px-3 py-2.5 text-sm text-ink-primary">
+            <AlertTriangle size={16} className="mt-0.5 shrink-0" style={{ color: "var(--status-warning)" }} />
+            <span>
+              Já existe um lançamento para hoje. Esta ação vai{" "}
+              <strong>sobrescrever</strong> os dados atuais.
+            </span>
+          </div>
+        )}
+
         {loading ? (
           <p className="mt-6 text-sm text-ink-secondary">Carregando...</p>
         ) : (
@@ -155,7 +202,11 @@ export default function LancamentoPage() {
                     min="0"
                     step={field.step ?? "1"}
                     value={form[field.key]}
-                    onChange={(e) => setForm({ ...form, [field.key]: e.target.value })}
+                    onChange={(e) => {
+                      setForm({ ...form, [field.key]: e.target.value });
+                      // Clear validation error as user edits
+                      setValidationError("");
+                    }}
                     placeholder="0"
                     className={inputClass}
                   />
@@ -163,13 +214,25 @@ export default function LancamentoPage() {
               ))}
             </div>
 
+            {/* UX-03: inline validation error */}
+            {validationError && (
+              <div className="mt-4 flex items-start gap-2 rounded-lg border border-status-critical/40 bg-status-critical/10 px-3 py-2.5 text-sm text-status-critical">
+                <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+                <span>{validationError}</span>
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={saving}
               className="mt-6 w-full rounded-lg px-3 py-2.5 text-sm font-medium text-white transition disabled:opacity-50 sm:w-auto sm:px-6"
               style={{ background: "var(--brand-gradient)" }}
             >
-              {saving ? "Salvando..." : "Salvar lançamento do dia"}
+              {saving
+                ? "Salvando..."
+                : entryExists
+                  ? "Atualizar lançamento"
+                  : "Salvar lançamento do dia"}
             </button>
 
             {savedAt && (
