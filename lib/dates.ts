@@ -22,6 +22,7 @@ export const PERIOD_PRESETS = [
   { key: "last_week", label: "Semana passada" },
   { key: "this_month", label: "Este mês" },
   { key: "last_month", label: "Mês passado" },
+  { key: "last_30_days", label: "Últimos 30 dias" },
 ] as const;
 
 export type PeriodPresetKey = (typeof PERIOD_PRESETS)[number]["key"] | "custom";
@@ -55,6 +56,8 @@ export function getRangeForPreset(key: PeriodPresetKey, custom?: DateRange): Dat
       const lastMonth = subMonths(now, 1);
       return { start: startOfMonth(lastMonth), end: endOfMonth(lastMonth) };
     }
+    case "last_30_days":
+      return { start: startOfDay(subDays(now, 29)), end: endOfDay(now) };
     case "custom":
       if (!custom) throw new Error("Período customizado requer start/end.");
       return { start: startOfDay(custom.start), end: endOfDay(custom.end) };

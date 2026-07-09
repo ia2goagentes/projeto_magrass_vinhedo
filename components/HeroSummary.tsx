@@ -36,7 +36,7 @@ export function HeroSummary({
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       {items.map((item) => (
         <div key={item.label} className="min-w-0 rounded-2xl border border-border-hairline bg-surface-card p-4 shadow-sm sm:p-5">
           <span

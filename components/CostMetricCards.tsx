@@ -1,6 +1,7 @@
 import { ArrowDown, ArrowUp, CalendarCheck, Receipt, TrendingUp, Users, Wallet, type LucideIcon } from "lucide-react";
 import { MetricKey, Goal } from "@/lib/types";
-import { colorForMetric, formatMetricValue, MetricComparison, METRIC_META } from "@/lib/metrics";
+import { formatMetricValue, MetricComparison, METRIC_META } from "@/lib/metrics";
+import { Sparkline } from "@/components/Sparkline";
 
 const COST_CARD_KEYS: MetricKey[] = ["cpl", "cpa", "cac", "avg_ticket", "roas"];
 
@@ -12,28 +13,30 @@ const METRIC_ICONS: Record<string, LucideIcon> = {
   roas: TrendingUp,
 };
 
-const STATUS_VAR: Record<string, string> = {
-  green: "var(--status-good)",
-  yellow: "var(--status-warning)",
-  red: "var(--status-critical)",
-  neutral: "var(--ink-muted)",
+const IDENTITY_VAR: Record<string, string> = {
+  cpl: "var(--identity-blue)",
+  cpa: "var(--identity-green)",
+  cac: "var(--identity-teal)",
+  avg_ticket: "var(--identity-amber)",
+  roas: "var(--identity-pink)",
 };
 
 export function CostMetricCards({
   metrics,
   goals,
   comparison,
+  sparklines,
 }: {
   metrics: Record<MetricKey, number | null>;
   goals: Record<string, Goal>;
   comparison?: Record<MetricKey, MetricComparison>;
+  sparklines?: Partial<Record<MetricKey, number[]>>;
 }) {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
       {COST_CARD_KEYS.map((key) => {
         const value = metrics[key];
-        const color = colorForMetric(value, goals[key]);
-        const statusVar = STATUS_VAR[color];
+        const identityVar = IDENTITY_VAR[key];
         const Icon = METRIC_ICONS[key];
         const delta = comparison?.[key]?.deltaPct ?? null;
         const isGoodDelta =
@@ -42,6 +45,7 @@ export function CostMetricCards({
             : goals[key]?.direction === "lower_is_better"
               ? delta <= 0
               : delta >= 0;
+        const series = sparklines?.[key];
 
         return (
           <div
@@ -50,7 +54,7 @@ export function CostMetricCards({
           >
             <span
               className="flex h-8 w-8 items-center justify-center rounded-lg"
-              style={{ background: `color-mix(in srgb, ${statusVar} 14%, transparent)`, color: statusVar }}
+              style={{ background: `color-mix(in srgb, ${identityVar} 14%, transparent)`, color: identityVar }}
             >
               <Icon size={16} />
             </span>
@@ -69,6 +73,11 @@ export function CostMetricCards({
                 {delta >= 0 ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
                 {Math.abs(delta).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%
               </p>
+            )}
+            {series && series.length >= 2 && (
+              <div className="mt-2">
+                <Sparkline values={series} color={identityVar} />
+              </div>
             )}
           </div>
         );

@@ -76,7 +76,8 @@ insert into public.goals (metric_key, direction) values
   ('lead_to_closing_rate', 'higher_is_better'),
   ('avg_ticket', 'higher_is_better'),
   ('cac', 'lower_is_better'),
-  ('roas', 'higher_is_better')
+  ('roas', 'higher_is_better'),
+  ('monthly_closings_target', 'higher_is_better')
 on conflict (metric_key) do nothing;
 
 -- ---------------------------------------------------------------------------

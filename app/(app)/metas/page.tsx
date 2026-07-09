@@ -5,16 +5,20 @@ import { createClient } from "@/lib/supabase/client";
 import { METRIC_META } from "@/lib/metrics";
 import { Goal, MetricKey } from "@/lib/types";
 
+const MONTHLY_GOAL_KEY = "monthly_closings_target";
+
 type RowState = { target_value: string; direction: Goal["direction"]; saving: boolean };
 
 const inputClass =
-  "rounded-lg border border-border-hairline bg-surface-card px-2 py-1.5 text-sm text-ink-primary outline-none focus:border-brand";
+  "rounded-lg border border-border-hairline bg-surface-card px-2 py-1.5 text-sm text-ink-primary outline-none focus:border-accent";
 
 export default function MetasPage() {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [rows, setRows] = useState<Record<string, RowState>>({});
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [monthlyTarget, setMonthlyTarget] = useState("");
+  const [savingMonthly, setSavingMonthly] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -28,7 +32,11 @@ export default function MetasPage() {
       }
 
       const list = (data ?? []) as Goal[];
-      setGoals(list);
+      setGoals(list.filter((g) => g.metric_key !== MONTHLY_GOAL_KEY));
+
+      const monthlyGoal = list.find((g) => g.metric_key === MONTHLY_GOAL_KEY);
+      setMonthlyTarget(monthlyGoal?.target_value === null || monthlyGoal?.target_value === undefined ? "" : String(monthlyGoal.target_value));
+
       setRows(
         Object.fromEntries(
           list.map((g) => [
@@ -72,6 +80,26 @@ export default function MetasPage() {
     if (error) setErrorMessage(error.message);
   }
 
+  async function handleSaveMonthly() {
+    setSavingMonthly(true);
+    setErrorMessage("");
+
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    const { error } = await supabase
+      .from("goals")
+      .update({
+        target_value: monthlyTarget === "" ? null : Number(monthlyTarget),
+        updated_by: user?.id,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("metric_key", MONTHLY_GOAL_KEY);
+
+    setSavingMonthly(false);
+    if (error) setErrorMessage(error.message);
+  }
+
   if (loading) return <p className="text-sm text-ink-secondary">Carregando...</p>;
 
   return (
@@ -84,6 +112,31 @@ export default function MetasPage() {
 
       {errorMessage && <p className="mt-4 text-sm text-status-critical">{errorMessage}</p>}
 
+      <div className="mt-6 rounded-2xl border border-border-hairline bg-surface-card p-4 shadow-sm">
+        <p className="text-sm font-medium text-ink-primary">Meta mensal de fechamentos</p>
+        <p className="mt-0.5 text-xs text-ink-secondary">
+          Aparece como barra de progresso no topo do dashboard, sempre referente ao mês corrente.
+        </p>
+        <div className="mt-3 flex items-center gap-2">
+          <input
+            type="number"
+            min="0"
+            placeholder="Ex: 300"
+            value={monthlyTarget}
+            onChange={(e) => setMonthlyTarget(e.target.value)}
+            className={`w-32 ${inputClass}`}
+          />
+          <button
+            onClick={handleSaveMonthly}
+            disabled={savingMonthly}
+            className="rounded-lg px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+            style={{ background: "var(--brand-gradient)" }}
+          >
+            {savingMonthly ? "Salvando..." : "Salvar"}
+          </button>
+        </div>
+      </div>
+
       <div className="mt-6 rounded-2xl border border-border-hairline bg-surface-card shadow-sm">
         {/* Mobile: card list */}
         <div className="divide-y divide-border-hairline sm:hidden">
@@ -94,7 +147,7 @@ export default function MetasPage() {
             return (
               <div key={goal.metric_key} className="p-4">
                 <p className="text-sm font-medium text-ink-primary">
-                  {METRIC_META[goal.metric_key]?.label ?? goal.metric_key}
+                  {METRIC_META[goal.metric_key as MetricKey]?.label ?? goal.metric_key}
                 </p>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <input
@@ -127,7 +180,7 @@ export default function MetasPage() {
                     <option value="lower_is_better">Menor é melhor</option>
                   </select>
                   <button
-                    onClick={() => handleSave(goal.metric_key)}
+                    onClick={() => handleSave(goal.metric_key as MetricKey)}
                     disabled={row.saving}
                     className="ml-auto rounded-lg px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
                     style={{ background: "var(--brand-gradient)" }}
@@ -159,7 +212,7 @@ export default function MetasPage() {
                 return (
                   <tr key={goal.metric_key} className="border-b border-border-hairline last:border-0">
                     <td className="px-4 py-3 text-ink-secondary">
-                      {METRIC_META[goal.metric_key]?.label ?? goal.metric_key}
+                      {METRIC_META[goal.metric_key as MetricKey]?.label ?? goal.metric_key}
                     </td>
                     <td className="px-4 py-3">
                       <input
@@ -195,7 +248,7 @@ export default function MetasPage() {
                     </td>
                     <td className="px-4 py-3">
                       <button
-                        onClick={() => handleSave(goal.metric_key)}
+                        onClick={() => handleSave(goal.metric_key as MetricKey)}
                         disabled={row.saving}
                         className="rounded-lg px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
                         style={{ background: "var(--brand-gradient)" }}

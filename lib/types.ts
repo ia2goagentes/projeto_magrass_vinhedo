@@ -51,7 +51,9 @@ export type GoalDirection = "higher_is_better" | "lower_is_better";
 
 export type Goal = {
   id: string;
-  metric_key: MetricKey;
+  // Normalmente é um MetricKey, mas a tabela também guarda metas que não são
+  // taxas calculadas (ex.: "monthly_closings_target"), daí o | string.
+  metric_key: MetricKey | string;
   target_value: number | null;
   direction: GoalDirection;
   updated_by: string | null;

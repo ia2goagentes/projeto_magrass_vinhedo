@@ -108,7 +108,10 @@ export function TrendChart({ buckets }: { buckets: Bucket[] }) {
                 axisLine={false}
                 tickLine={false}
               />
-              <Tooltip content={<ChartTooltip />} />
+              <Tooltip
+                content={<ChartTooltip />}
+                cursor={{ stroke: "var(--ink-muted)", strokeDasharray: "4 4" }}
+              />
               <Legend content={<ChartLegend />} />
               {TREND_METRIC_KEYS.map((key) => (
                 <Line

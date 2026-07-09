@@ -15,7 +15,7 @@ const ROLE_LABELS: Record<Role, string> = {
 type RowState = { role: Role; saving: boolean };
 
 const selectClass =
-  "rounded-lg border border-border-hairline bg-surface-card px-2 py-1.5 text-sm text-ink-primary outline-none focus:border-brand";
+  "rounded-lg border border-border-hairline bg-surface-card px-2 py-1.5 text-sm text-ink-primary outline-none focus:border-accent";
 
 function initialsFor(name: string) {
   return name
@@ -28,10 +28,7 @@ function initialsFor(name: string) {
 
 function Avatar({ name }: { name: string }) {
   return (
-    <span
-      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white"
-      style={{ background: "var(--brand-gradient)" }}
-    >
+    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink-primary/10 text-xs font-semibold text-ink-primary">
       {initialsFor(name)}
     </span>
   );

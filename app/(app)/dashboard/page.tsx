@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { startOfMonth } from "date-fns";
 import { AlertTriangle } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -28,6 +29,16 @@ import { AdMetricsPanel } from "@/components/AdMetricsPanel";
 import { TrendChart } from "@/components/TrendChart";
 import { GoalComparisonTable } from "@/components/GoalComparisonTable";
 import { DailyLogTable } from "@/components/DailyLogTable";
+import { MonthlyGoalCard } from "@/components/MonthlyGoalCard";
+
+const SPARKLINE_KEYS: MetricKey[] = ["cpl", "cpa", "cac", "avg_ticket", "roas"];
+
+function greetingForNow(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Bom dia";
+  if (hour < 18) return "Boa tarde";
+  return "Boa noite";
+}
 
 export default function DashboardPage() {
   const [selection, setSelection] = useState<PeriodSelection>({
@@ -42,11 +53,47 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
+  const [profileName, setProfileName] = useState("");
+  const [monthlyClosings, setMonthlyClosings] = useState(0);
+  const [monthlyTarget, setMonthlyTarget] = useState<number | null>(null);
+
   const range = useMemo<DateRange>(
     () => getRangeForPreset(selection.presetKey, selection.customRange),
     [selection.presetKey, selection.customRange]
   );
   const previousRange = useMemo(() => getPreviousEquivalentRange(range), [range]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadStatic() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      const monthStart = toDateKey(startOfMonth(new Date()));
+      const today = toDateKey(new Date());
+
+      const [profileRes, monthEntriesRes, monthlyGoalRes] = await Promise.all([
+        user
+          ? supabase.from("profiles").select("name").eq("id", user.id).single()
+          : Promise.resolve({ data: null }),
+        supabase.from("daily_entries").select("closings_count").gte("entry_date", monthStart).lte("entry_date", today),
+        supabase.from("goals").select("target_value").eq("metric_key", "monthly_closings_target").maybeSingle(),
+      ]);
+
+      if (!active) return;
+
+      if (profileRes.data?.name) setProfileName(profileRes.data.name);
+      setMonthlyClosings(
+        (monthEntriesRes.data ?? []).reduce((sum, row) => sum + row.closings_count, 0)
+      );
+      setMonthlyTarget(monthlyGoalRes.data?.target_value ?? null);
+    }
+
+    loadStatic();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -162,13 +209,30 @@ export default function DashboardPage() {
     [entries, daySpan]
   );
 
+  const sparklineSeries = useMemo(() => {
+    const series: Partial<Record<MetricKey, number[]>> = {};
+    for (const key of SPARKLINE_KEYS) series[key] = [];
+    for (const bucket of buckets) {
+      const bucketMetrics = computeFunnelMetrics(bucket.agg, weeklyAgg);
+      for (const key of SPARKLINE_KEYS) {
+        const value = bucketMetrics[key];
+        if (value !== null) series[key]!.push(value);
+      }
+    }
+    return series;
+  }, [buckets, weeklyAgg]);
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-ink-primary">Dashboard do funil</h1>
-        <p className="mt-1 text-sm text-ink-secondary">
-          Leads → Agendamentos → Comparecimentos → Fechamentos.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-ink-primary">
+            {greetingForNow()}{profileName ? `, ${profileName.split(" ")[0]}` : ""}! 👋
+          </h1>
+          <p className="mt-1 text-sm text-ink-secondary">
+            Aqui está o desempenho da clínica no período selecionado.
+          </p>
+        </div>
       </div>
 
       <PeriodPicker value={selection} onChange={setSelection} />
@@ -204,6 +268,7 @@ export default function DashboardPage() {
             metrics={metrics as Record<MetricKey, number | null>}
             goals={goalsMap}
             comparison={comparison}
+            sparklines={sparklineSeries}
           />
 
           <AdMetricsPanel weeklyRows={weeklyRows} />
@@ -217,6 +282,8 @@ export default function DashboardPage() {
           />
 
           <DailyLogTable range={range} entries={entries} />
+
+          <MonthlyGoalCard current={monthlyClosings} target={monthlyTarget} />
         </>
       )}
     </div>

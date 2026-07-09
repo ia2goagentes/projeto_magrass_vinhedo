@@ -75,7 +75,7 @@ export default function SignupPage() {
           placeholder="Seu nome"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="w-full rounded-lg border border-border-hairline bg-surface-card px-3 py-2 text-sm text-ink-primary outline-none focus:border-brand"
+          className="w-full rounded-lg border border-border-hairline bg-surface-card px-3 py-2 text-sm text-ink-primary outline-none focus:border-accent"
         />
         <input
           type="email"
@@ -83,7 +83,7 @@ export default function SignupPage() {
           placeholder="seu@email.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-lg border border-border-hairline bg-surface-card px-3 py-2 text-sm text-ink-primary outline-none focus:border-brand"
+          className="w-full rounded-lg border border-border-hairline bg-surface-card px-3 py-2 text-sm text-ink-primary outline-none focus:border-accent"
         />
         <input
           type="password"
@@ -92,7 +92,7 @@ export default function SignupPage() {
           placeholder="Senha (mínimo 6 caracteres)"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded-lg border border-border-hairline bg-surface-card px-3 py-2 text-sm text-ink-primary outline-none focus:border-brand"
+          className="w-full rounded-lg border border-border-hairline bg-surface-card px-3 py-2 text-sm text-ink-primary outline-none focus:border-accent"
         />
         <input
           type="password"
@@ -100,7 +100,7 @@ export default function SignupPage() {
           placeholder="Confirmar senha"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
-          className="w-full rounded-lg border border-border-hairline bg-surface-card px-3 py-2 text-sm text-ink-primary outline-none focus:border-brand"
+          className="w-full rounded-lg border border-border-hairline bg-surface-card px-3 py-2 text-sm text-ink-primary outline-none focus:border-accent"
         />
         <button
           type="submit"
@@ -115,7 +115,7 @@ export default function SignupPage() {
 
       <p className="mt-4 text-center text-sm text-ink-secondary">
         Já tem conta?{" "}
-        <Link href="/login" className="font-medium text-brand hover:underline">
+        <Link href="/login" className="font-medium text-accent hover:underline">
           Entrar
         </Link>
       </p>
