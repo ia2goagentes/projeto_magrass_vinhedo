@@ -59,3 +59,39 @@ export type Goal = {
   updated_by: string | null;
   updated_at: string;
 };
+
+export type LeadStatus =
+  | "novo"
+  | "contatado"
+  | "agendado"
+  | "compareceu"
+  | "no_show"
+  | "comprou"
+  | "perdido"
+  | "sem_interesse";
+
+export const LEAD_STATUS_LABELS: Record<LeadStatus, string> = {
+  novo: "Novo",
+  contatado: "Contatado",
+  agendado: "Agendado",
+  compareceu: "Compareceu",
+  no_show: "No-show",
+  comprou: "Comprou",
+  perdido: "Perdido",
+  sem_interesse: "Sem interesse",
+};
+
+export type Lead = {
+  id: string;
+  lead_source_id: string | null;
+  name: string;
+  whatsapp: string;
+  form_answers: Record<string, string>;
+  raw_payload: Record<string, unknown>;
+  status: LeadStatus;
+  notes: string | null;
+  status_updated_at: string | null;
+  source: string;
+  created_at: string;
+  updated_at: string;
+};
