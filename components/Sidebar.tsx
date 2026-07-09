@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   Megaphone,
   Target,
+  UserCheck,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -28,6 +29,7 @@ export type NavLink = { href: string; label: string; icon: LucideIcon; roles?: R
 
 const LINKS: NavLink[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/leads", label: "Leads", icon: UserCheck, roles: ["sdr", "gestor"] },
   { href: "/lancamento", label: "Lançamento diário", icon: ClipboardList, roles: ["sdr", "gestor"] },
   { href: "/anuncios", label: "Anúncios", icon: Megaphone, roles: ["gestor"] },
   { href: "/historico", label: "Histórico", icon: History },
