@@ -68,28 +68,26 @@
 
 ## Traceability
 
-*(Preenchido pelo roadmapper)*
-
 | REQ-ID | Fase |
 |--------|------|
-| INGST-01 | — |
-| INGST-02 | — |
-| INGST-03 | — |
-| INGST-04 | — |
-| CRM-01 | — |
-| CRM-02 | — |
-| CRM-03 | — |
-| CRM-04 | — |
-| CRM-05 | — |
-| DASH-01 | — |
-| DASH-02 | — |
-| DASH-03 | — |
-| DASH-04 | — |
-| UI-01 | — |
-| UI-02 | — |
-| UI-03 | — |
-| UI-04 | — |
-| UX-01 | — |
-| UX-02 | — |
-| UX-03 | — |
-| UX-04 | — |
+| INGST-01 | Phase 1 |
+| INGST-02 | Phase 1 |
+| INGST-03 | Phase 1 |
+| INGST-04 | Phase 1 |
+| CRM-01 | Phase 3 |
+| CRM-02 | Phase 3 |
+| CRM-03 | Phase 3 |
+| CRM-04 | Phase 3 |
+| CRM-05 | Phase 3 |
+| DASH-01 | Phase 2 |
+| DASH-02 | Phase 2 |
+| DASH-03 | Phase 2 |
+| DASH-04 | Phase 2 |
+| UI-01 | Phase 2 |
+| UI-02 | Phase 2 |
+| UI-03 | Phase 2 |
+| UI-04 | Phase 2 |
+| UX-01 | Phase 4 |
+| UX-02 | Phase 4 |
+| UX-03 | Phase 4 |
+| UX-04 | Phase 4 |
