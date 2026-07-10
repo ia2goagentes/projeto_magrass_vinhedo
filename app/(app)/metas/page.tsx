@@ -39,14 +39,16 @@ export default function MetasPage() {
 
       setRows(
         Object.fromEntries(
-          list.map((g) => [
-            g.metric_key,
-            {
-              target_value: g.target_value === null ? "" : String(g.target_value),
-              direction: g.direction,
-              saving: false,
-            },
-          ])
+          list.map((g) => {
+            // Métricas de percentual são guardadas como fração (0.294 = 29,4%);
+            // o campo mostra sempre o número "humano" (29.4), não a fração.
+            const isPercent = METRIC_META[g.metric_key as MetricKey]?.format === "percent";
+            const target_value =
+              g.target_value === null
+                ? ""
+                : String(isPercent ? g.target_value * 100 : g.target_value);
+            return [g.metric_key, { target_value, direction: g.direction, saving: false }];
+          })
         )
       );
       setLoading(false);
@@ -65,10 +67,15 @@ export default function MetasPage() {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
+    // Converte o número "humano" de volta pra fração antes de salvar (ver load()).
+    const isPercent = METRIC_META[metricKey]?.format === "percent";
+    const entered = row.target_value === "" ? null : Number(row.target_value);
+    const target_value = entered === null ? null : isPercent ? entered / 100 : entered;
+
     const { error } = await supabase
       .from("goals")
       .update({
-        target_value: row.target_value === "" ? null : Number(row.target_value),
+        target_value,
         direction: row.direction,
         updated_by: user?.id,
         updated_at: new Date().toISOString(),

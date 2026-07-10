@@ -67,7 +67,7 @@ export function Sidebar({ role, name }: { role: Role; name: string }) {
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-border-hairline bg-surface-card lg:flex">
         <div className="flex items-center gap-2 px-5 py-5">
           <LogoBadge />
-          <span className="text-sm font-semibold text-ink-primary">Clínica Magras</span>
+          <span className="text-sm font-semibold text-ink-primary">Clínica Magrass</span>
         </div>
 
         <nav className="flex-1 space-y-1 px-3">
@@ -112,7 +112,7 @@ export function Sidebar({ role, name }: { role: Role; name: string }) {
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border-hairline bg-surface-card px-4 py-3 lg:hidden">
         <div className="flex items-center gap-2">
           <LogoBadge />
-          <span className="text-sm font-semibold text-ink-primary">Clínica Magras</span>
+          <span className="text-sm font-semibold text-ink-primary">Clínica Magrass</span>
         </div>
         <div className="flex items-center gap-1">
           <ThemeToggle />

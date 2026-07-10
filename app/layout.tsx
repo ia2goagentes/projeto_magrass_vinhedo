@@ -24,7 +24,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Dashboard de Funil — Clínica Magras",
+  title: "Dashboard de Funil — Clínica Magrass",
   description: "Acompanhamento do funil de leads, agendamentos, comparecimentos e fechamentos.",
 };
 
