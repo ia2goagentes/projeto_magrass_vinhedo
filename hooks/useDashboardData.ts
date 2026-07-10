@@ -5,7 +5,6 @@ import { startOfMonth } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
 import {
   DateRange,
-  getPreviousEquivalentRange,
   listDateKeysInRange,
   toDateKey,
   weeklyMetricsOverlapRange,
@@ -121,7 +120,9 @@ export function useDashboardRange(
 
   // Guarda referência estável do previousRange para não re-disparar efeito desnecessariamente
   const prevRangeRef = useRef(previousRange);
-  prevRangeRef.current = previousRange;
+  useEffect(() => {
+    prevRangeRef.current = previousRange;
+  }, [previousRange]);
 
   useEffect(() => {
     let active = true;
@@ -196,7 +197,6 @@ export function useDashboardRange(
 
     load();
     return () => { active = false; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [range, withComparison]);
 
   return {

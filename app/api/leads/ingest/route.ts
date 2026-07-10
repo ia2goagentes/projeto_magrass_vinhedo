@@ -13,6 +13,11 @@ const STANDARD_FIELDS = new Set([
 ]);
 
 export async function POST(request: Request) {
+  const providedSecret = request.headers.get("x-webhook-secret");
+  if (!process.env.WEBHOOK_SECRET || providedSecret !== process.env.WEBHOOK_SECRET) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   let body: Record<string, unknown>;
   try {
     body = (await request.json()) as Record<string, unknown>;

@@ -211,9 +211,9 @@ export default function LeadsPage() {
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
 
     async function fetchLeads() {
+      setLoading(true);
       const supabase = createClient();
       const { data, error } = await supabase
         .from("leads")
@@ -256,7 +256,6 @@ export default function LeadsPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── Optimistic status update ───────────────────────────────────────────────
