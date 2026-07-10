@@ -15,7 +15,7 @@ import {
 import { Role } from "@/lib/types";
 import { LogoutButton } from "@/components/LogoutButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { MobileNav } from "@/components/MobileNav";
+import { MobileTabBar } from "@/components/MobileTabBar";
 
 const ROLE_LABELS: Record<Role, string> = {
   pendente: "Pendente",
@@ -114,11 +114,11 @@ export function Sidebar({ role, name }: { role: Role; name: string }) {
           <LogoBadge />
           <span className="text-sm font-semibold text-ink-primary">Clínica Magrass</span>
         </div>
-        <div className="flex items-center gap-1">
-          <ThemeToggle />
-          <MobileNav links={visibleLinks} name={name} role={ROLE_LABELS[role]} />
-        </div>
+        <ThemeToggle />
       </header>
+
+      {/* Mobile bottom tab bar */}
+      <MobileTabBar links={visibleLinks} name={name} role={ROLE_LABELS[role]} />
     </>
   );
 }
