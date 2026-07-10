@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { Lead, LeadStatus, LEAD_STATUS_LABELS } from "@/lib/types";
+import { Lead, LeadStatus, LEAD_ORIGIN_OPTIONS, LEAD_STATUS_LABELS } from "@/lib/types";
 import {
   formatDateTime,
   formatWhatsApp,
   humanizeFormAnswerKey,
+  toDatetimeLocalValue,
 } from "./leadStatusStyle";
 
 const ALL_STATUSES = Object.keys(LEAD_STATUS_LABELS) as LeadStatus[];
@@ -17,14 +18,18 @@ export function LeadDetailDrawer({
   onClose,
   onStatusChange,
   onNoteSaved,
+  onFieldSaved,
 }: {
   lead: Lead | null;
   onClose: () => void;
   onStatusChange: (id: string, status: LeadStatus) => void;
   onNoteSaved: (id: string, notes: string) => void;
+  onFieldSaved: (id: string, fields: Partial<Lead>) => void;
 }) {
   const [noteValue, setNoteValue] = useState(lead?.notes ?? "");
   const [savingNote, setSavingNote] = useState(false);
+  const [procedureValue, setProcedureValue] = useState(lead?.procedure_interest ?? "");
+  const [tagInput, setTagInput] = useState("");
 
   if (!lead) return null;
 
@@ -38,6 +43,55 @@ export function LeadDetailDrawer({
       .eq("id", lead.id);
     setSavingNote(false);
     if (!error) onNoteSaved(lead.id, noteValue);
+  }
+
+  async function handleSaveProcedure() {
+    if (!lead || procedureValue === (lead.procedure_interest ?? "")) return;
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("leads")
+      .update({ procedure_interest: procedureValue || null })
+      .eq("id", lead.id);
+    if (!error) onFieldSaved(lead.id, { procedure_interest: procedureValue || null });
+  }
+
+  async function handleOriginChange(value: string) {
+    if (!lead) return;
+    const supabase = createClient();
+    const { error } = await supabase.from("leads").update({ origin: value }).eq("id", lead.id);
+    if (!error) onFieldSaved(lead.id, { origin: value });
+  }
+
+  async function handleScheduledAtChange(value: string) {
+    if (!lead) return;
+    const iso = value ? new Date(value).toISOString() : null;
+    const supabase = createClient();
+    const { error } = await supabase.from("leads").update({ scheduled_at: iso }).eq("id", lead.id);
+    if (!error) onFieldSaved(lead.id, { scheduled_at: iso });
+  }
+
+  async function saveTags(nextTags: string[]) {
+    if (!lead) return;
+    const supabase = createClient();
+    const { error } = await supabase.from("leads").update({ tags: nextTags }).eq("id", lead.id);
+    if (!error) onFieldSaved(lead.id, { tags: nextTags });
+  }
+
+  function handleAddTag(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    const value = tagInput.trim();
+    if (!value || !lead || lead.tags.includes(value)) {
+      setTagInput("");
+      return;
+    }
+    setTagInput("");
+    saveTags([...lead.tags, value]);
+  }
+
+  function handleRemoveTag(tag: string) {
+    if (!lead) return;
+    saveTags(lead.tags.filter((t) => t !== tag));
   }
 
   const formAnswerEntries = Object.entries(lead.form_answers ?? {});
@@ -91,6 +145,83 @@ export function LeadDetailDrawer({
                 </option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">
+              Agendamento
+            </p>
+            <input
+              type="datetime-local"
+              value={toDatetimeLocalValue(lead.scheduled_at)}
+              onChange={(e) => handleScheduledAtChange(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-border-hairline bg-surface-page px-3 py-2 text-sm text-ink-primary outline-none focus:border-accent"
+            />
+          </div>
+
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">
+              Origem
+            </p>
+            <select
+              value={lead.origin ?? ""}
+              onChange={(e) => handleOriginChange(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-border-hairline bg-surface-page px-3 py-2 text-sm text-ink-primary outline-none focus:border-accent"
+            >
+              <option value="" disabled>
+                Selecione a origem
+              </option>
+              {LEAD_ORIGIN_OPTIONS.map((o) => (
+                <option key={o} value={o}>
+                  {o}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">
+              Procedimento de interesse
+            </p>
+            <input
+              type="text"
+              value={procedureValue}
+              onChange={(e) => setProcedureValue(e.target.value)}
+              onBlur={handleSaveProcedure}
+              placeholder="Ex: Emagrecimento, Botox..."
+              className="mt-1 w-full rounded-lg border border-border-hairline bg-surface-page px-3 py-2 text-sm text-ink-primary outline-none focus:border-accent"
+            />
+          </div>
+
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">
+              Tags
+            </p>
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {lead.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent"
+                >
+                  {tag}
+                  <button
+                    onClick={() => handleRemoveTag(tag)}
+                    aria-label={`Remover tag ${tag}`}
+                    className="hover:opacity-70"
+                  >
+                    <X size={11} />
+                  </button>
+                </span>
+              ))}
+            </div>
+            <input
+              type="text"
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={handleAddTag}
+              placeholder="Digite e pressione Enter"
+              className="mt-2 w-full rounded-lg border border-border-hairline bg-surface-page px-3 py-2 text-sm text-ink-primary outline-none focus:border-accent"
+            />
           </div>
 
           <div>

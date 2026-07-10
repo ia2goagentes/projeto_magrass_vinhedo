@@ -94,6 +94,15 @@ export const LEAD_STATUS_LABELS: Record<LeadStatus, string> = {
   sem_interesse: "Sem interesse",
 };
 
+export const LEAD_ORIGIN_OPTIONS = [
+  "Facebook Ads",
+  "Instagram",
+  "Indicação",
+  "Site",
+  "WhatsApp direto",
+  "Outro",
+] as const;
+
 export type Lead = {
   id: string;
   lead_source_id: string | null;
@@ -105,6 +114,10 @@ export type Lead = {
   notes: string | null;
   status_updated_at: string | null;
   source: string;
+  origin: string | null;
+  procedure_interest: string | null;
+  tags: string[];
+  scheduled_at: string | null;
   created_at: string;
   updated_at: string;
 };

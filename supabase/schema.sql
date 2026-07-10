@@ -264,6 +264,12 @@ create table if not exists public.leads (
   updated_at        timestamptz not null default now()
 );
 
+-- CRM-02: mais contexto no lead + agendamento direto no card.
+alter table public.leads add column if not exists origin text;
+alter table public.leads add column if not exists procedure_interest text;
+alter table public.leads add column if not exists tags text[] not null default '{}';
+alter table public.leads add column if not exists scheduled_at timestamptz;
+
 create or replace function public.set_updated_at()
 returns trigger language plpgsql as $$
 begin
@@ -290,8 +296,13 @@ create policy "leads_update_sdr_gestor"
   using (public.current_role() in ('sdr', 'gestor'))
   with check (public.current_role() in ('sdr', 'gestor'));
 
--- No INSERT policy — webhook uses service-role key (RLS bypass).
--- No DELETE policy — leads are archived via status, never deleted.
+drop policy if exists "leads_insert_sdr_gestor" on public.leads;
+create policy "leads_insert_sdr_gestor"
+  on public.leads for insert to authenticated
+  with check (public.current_role() in ('sdr', 'gestor'));
+
+-- Leads também podem entrar via webhook (service-role, bypassa RLS).
+-- No DELETE policy — leads são arquivados via status, nunca apagados.
 
 create or replace view public.lead_funnel_by_status as
 select

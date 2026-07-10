@@ -1,9 +1,9 @@
 "use client";
 
 import { useDraggable } from "@dnd-kit/core";
-import { GripVertical, Phone, StickyNote } from "lucide-react";
+import { CalendarClock, GripVertical, Phone, StickyNote } from "lucide-react";
 import { Lead } from "@/lib/types";
-import { formatRelativeDate, formatWhatsApp } from "./leadStatusStyle";
+import { formatDateTime, formatRelativeDate, formatWhatsApp } from "./leadStatusStyle";
 
 export function LeadCard({
   lead,
@@ -47,6 +47,16 @@ export function LeadCard({
         <Phone size={11} className="shrink-0" />
         {formatWhatsApp(lead.whatsapp)}
       </p>
+
+      {lead.scheduled_at && (
+        <p
+          className="mt-1.5 flex items-center gap-1 text-xs font-medium"
+          style={{ color }}
+        >
+          <CalendarClock size={11} className="shrink-0" />
+          {formatDateTime(lead.scheduled_at)}
+        </p>
+      )}
 
       <div className="mt-2.5 flex items-center justify-between border-t border-border-hairline pt-2 text-[11px] text-ink-muted">
         <span>Criado {formatRelativeDate(lead.created_at)}</span>

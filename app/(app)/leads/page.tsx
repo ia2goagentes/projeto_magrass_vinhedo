@@ -11,9 +11,10 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { Bell } from "lucide-react";
+import { Bell, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Lead, LeadStatus } from "@/lib/types";
+import { AddLeadModal } from "@/components/leads/AddLeadModal";
 import { KanbanColumn } from "@/components/leads/KanbanColumn";
 import { LeadCard } from "@/components/leads/LeadCard";
 import { LeadDetailDrawer } from "@/components/leads/LeadDetailDrawer";
@@ -48,6 +49,7 @@ export default function LeadsPage() {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [addModalOpen, setAddModalOpen] = useState(false);
   const toastCounter = useRef(0);
 
   const sensors = useSensors(
@@ -140,6 +142,12 @@ export default function LeadsPage() {
     );
   }
 
+  // ── Campos genéricos (origem, procedimento, tags, agendamento) ─────────────
+
+  function handleFieldSaved(id: string, fields: Partial<Lead>) {
+    setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, ...fields } : l)));
+  }
+
   // ── Drag handlers ───────────────────────────────────────────────────────────
 
   function handleDragStart(event: DragStartEvent) {
@@ -164,12 +172,24 @@ export default function LeadsPage() {
     <>
       <Toast items={toasts} onDismiss={dismissToast} />
 
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-ink-primary">Leads</h1>
-        <p className="mt-1 text-sm text-ink-secondary">
-          Arraste os cards entre as colunas para atualizar o status, ou clique para ver os detalhes.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-ink-primary">Leads</h1>
+          <p className="mt-1 text-sm text-ink-secondary">
+            Arraste os cards entre as colunas para atualizar o status, ou clique para ver os detalhes.
+          </p>
+        </div>
+        <button
+          onClick={() => setAddModalOpen(true)}
+          className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-white transition"
+          style={{ background: "var(--brand-gradient)" }}
+        >
+          <Plus size={16} />
+          Novo lead
+        </button>
       </div>
+
+      {addModalOpen && <AddLeadModal onClose={() => setAddModalOpen(false)} />}
 
       {loading ? (
         <div className="mt-6 flex gap-4 overflow-x-auto pb-4">
@@ -218,6 +238,7 @@ export default function LeadsPage() {
         onClose={() => setSelectedLeadId(null)}
         onStatusChange={handleStatusChange}
         onNoteSaved={handleNoteSaved}
+        onFieldSaved={handleFieldSaved}
       />
     </>
   );
