@@ -137,7 +137,7 @@ export default function DashboardPage() {
             error={leadsError}
           />
 
-          <AdMetricsPanel weeklyRows={rangeData.weeklyRows} />
+          <AdMetricsPanel adRows={rangeData.adRows} />
 
           <TrendChart buckets={buckets} />
 

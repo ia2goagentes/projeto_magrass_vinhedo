@@ -49,6 +49,28 @@ create table if not exists public.weekly_ad_metrics (
   updated_at timestamptz not null default now()
 );
 
+-- daily_ad_metrics: preenchida automaticamente 1x/dia pelo cron de sincronização
+-- com a API da Meta (ver app/api/cron/sync-meta-ads). weekly_ad_metrics
+-- continua existindo só como reserva manual, caso precise corrigir algo.
+create table if not exists public.daily_ad_metrics (
+  id uuid primary key default gen_random_uuid(),
+  metric_date date not null unique,
+  investment_amount numeric(12, 2) not null default 0,
+  impressions_count integer not null default 0,
+  reach_count integer not null default 0,
+  reported_leads_count integer not null default 0,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.daily_ad_metrics enable row level security;
+
+drop policy if exists "daily_ad_metrics_select_all" on public.daily_ad_metrics;
+create policy "daily_ad_metrics_select_all"
+  on public.daily_ad_metrics for select to authenticated
+  using (true);
+
+-- Sem policy de insert/update: só o cron (service role) escreve aqui.
+
 create table if not exists public.goals (
   id uuid primary key default gen_random_uuid(),
   metric_key text not null unique,

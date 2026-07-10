@@ -3,25 +3,20 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { startOfMonth } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
-import {
-  DateRange,
-  listDateKeysInRange,
-  toDateKey,
-  weeklyMetricsOverlapRange,
-} from "@/lib/dates";
+import { DateRange, listDateKeysInRange, toDateKey } from "@/lib/dates";
 import {
   Aggregated,
   Bucket,
   MetricComparison,
+  aggregateDailyAdMetrics,
   aggregateEntries,
-  aggregateWeeklyMetrics,
   bucketEntriesByDay,
   bucketEntriesByWeek,
   compareMetrics,
   computeFunnelMetrics,
   WeeklyAggregated,
 } from "@/lib/metrics";
-import { DailyEntry, Goal, MetricKey, WeeklyAdMetric } from "@/lib/types";
+import { DailyAdMetric, DailyEntry, Goal, MetricKey } from "@/lib/types";
 
 // Métricas que têm sparkline nos cards de custo
 const SPARKLINE_KEYS: MetricKey[] = ["cpl", "cpa", "cac", "avg_ticket", "roas"];
@@ -35,8 +30,8 @@ export type DashboardStaticData = {
 export type DashboardRangeData = {
   entries: DailyEntry[];
   previousEntries: DailyEntry[];
-  weeklyRows: WeeklyAdMetric[];
-  previousWeeklyRows: WeeklyAdMetric[];
+  adRows: DailyAdMetric[];
+  previousAdRows: DailyAdMetric[];
   goals: Goal[];
   loading: boolean;
   errorMessage: string;
@@ -112,8 +107,8 @@ export function useDashboardRange(
 ): DashboardRangeData {
   const [entries, setEntries] = useState<DailyEntry[]>([]);
   const [previousEntries, setPreviousEntries] = useState<DailyEntry[]>([]);
-  const [weeklyRows, setWeeklyRows] = useState<WeeklyAdMetric[]>([]);
-  const [previousWeeklyRows, setPreviousWeeklyRows] = useState<WeeklyAdMetric[]>([]);
+  const [adRows, setAdRows] = useState<DailyAdMetric[]>([]);
+  const [previousAdRows, setPreviousAdRows] = useState<DailyAdMetric[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
@@ -132,9 +127,8 @@ export function useDashboardRange(
       setErrorMessage("");
 
       const supabase = createClient();
-      const weeklyRange = weeklyMetricsOverlapRange(range);
 
-      const [entriesRes, weeklyRes, goalsRes] = await Promise.all([
+      const [entriesRes, adRes, goalsRes] = await Promise.all([
         supabase
           .from("daily_entries")
           .select("*")
@@ -142,11 +136,11 @@ export function useDashboardRange(
           .lte("entry_date", toDateKey(range.end))
           .order("entry_date"),
         supabase
-          .from("weekly_ad_metrics")
+          .from("daily_ad_metrics")
           .select("*")
-          .gte("week_start", toDateKey(weeklyRange.start))
-          .lte("week_start", toDateKey(weeklyRange.end))
-          .order("week_start"),
+          .gte("metric_date", toDateKey(range.start))
+          .lte("metric_date", toDateKey(range.end))
+          .order("metric_date"),
         supabase.from("goals").select("*"),
       ]);
 
@@ -155,17 +149,16 @@ export function useDashboardRange(
       if (entriesRes.error) setErrorMessage(entriesRes.error.message);
       else setEntries(entriesRes.data ?? []);
 
-      if (weeklyRes.error) setErrorMessage(weeklyRes.error.message);
-      else setWeeklyRows(weeklyRes.data ?? []);
+      if (adRes.error) setErrorMessage(adRes.error.message);
+      else setAdRows(adRes.data ?? []);
 
       if (goalsRes.error) setErrorMessage(goalsRes.error.message);
       else setGoals(goalsRes.data ?? []);
 
       if (withComparison) {
         const pRange = prevRangeRef.current;
-        const previousWeeklyRange = weeklyMetricsOverlapRange(pRange);
 
-        const [prevEntriesRes, prevWeeklyRes] = await Promise.all([
+        const [prevEntriesRes, prevAdRes] = await Promise.all([
           supabase
             .from("daily_entries")
             .select("*")
@@ -173,11 +166,11 @@ export function useDashboardRange(
             .lte("entry_date", toDateKey(pRange.end))
             .order("entry_date"),
           supabase
-            .from("weekly_ad_metrics")
+            .from("daily_ad_metrics")
             .select("*")
-            .gte("week_start", toDateKey(previousWeeklyRange.start))
-            .lte("week_start", toDateKey(previousWeeklyRange.end))
-            .order("week_start"),
+            .gte("metric_date", toDateKey(pRange.start))
+            .lte("metric_date", toDateKey(pRange.end))
+            .order("metric_date"),
         ]);
 
         if (!active) return;
@@ -185,11 +178,11 @@ export function useDashboardRange(
         if (prevEntriesRes.error) setErrorMessage(prevEntriesRes.error.message);
         else setPreviousEntries(prevEntriesRes.data ?? []);
 
-        if (prevWeeklyRes.error) setErrorMessage(prevWeeklyRes.error.message);
-        else setPreviousWeeklyRows(prevWeeklyRes.data ?? []);
+        if (prevAdRes.error) setErrorMessage(prevAdRes.error.message);
+        else setPreviousAdRows(prevAdRes.data ?? []);
       } else {
         setPreviousEntries([]);
-        setPreviousWeeklyRows([]);
+        setPreviousAdRows([]);
       }
 
       setLoading(false);
@@ -202,8 +195,8 @@ export function useDashboardRange(
   return {
     entries,
     previousEntries,
-    weeklyRows,
-    previousWeeklyRows,
+    adRows,
+    previousAdRows,
     goals,
     loading,
     errorMessage,
@@ -216,14 +209,14 @@ export function useDashboardDerived(
   range: DateRange,
   withComparison: boolean
 ): DashboardDerived {
-  const { entries, previousEntries, weeklyRows, previousWeeklyRows, goals } = data;
+  const { entries, previousEntries, adRows, previousAdRows, goals } = data;
 
   const agg = useMemo(() => aggregateEntries(entries), [entries]);
-  const weeklyAgg = useMemo(() => aggregateWeeklyMetrics(weeklyRows), [weeklyRows]);
+  const weeklyAgg = useMemo(() => aggregateDailyAdMetrics(adRows), [adRows]);
   const metrics = useMemo(() => computeFunnelMetrics(agg, weeklyAgg), [agg, weeklyAgg]);
 
   const previousAgg = useMemo(() => aggregateEntries(previousEntries), [previousEntries]);
-  const previousWeeklyAgg = useMemo(() => aggregateWeeklyMetrics(previousWeeklyRows), [previousWeeklyRows]);
+  const previousWeeklyAgg = useMemo(() => aggregateDailyAdMetrics(previousAdRows), [previousAdRows]);
   const previousMetrics = useMemo(
     () => computeFunnelMetrics(previousAgg, previousWeeklyAgg),
     [previousAgg, previousWeeklyAgg]
@@ -252,38 +245,23 @@ export function useDashboardDerived(
     [entries, daySpan]
   );
 
-  // DASH-04: corrige sparklines usando weekly data por bucket em vez do agregado global
-  // O bug anterior passava weeklyAgg (total do período inteiro) para cada bucket,
-  // fazendo CPL/CPA/CAC/ROAS sempre iguais → linha reta.
-  // Agora: cada bucket tem seu próprio sub-range de weeklyRows para o cálculo.
+  // Sparklines: cada bucket (dia ou semana) tem seu próprio sub-conjunto de
+  // adRows filtrado pela data — granularidade diária torna isso exato, sem
+  // precisar mais estimar/distribuir investimento como na versão semanal.
   const sparklineSeries = useMemo(() => {
     const series: Partial<Record<MetricKey, number[]>> = {};
     for (const key of SPARKLINE_KEYS) series[key] = [];
 
     for (const bucket of buckets) {
-      // Para métricas que dependem só de daily_entries (avg_ticket, etc),
-      // usamos o weeklyAgg completo. Para CPL/CPA/CAC/ROAS que dependem de investment,
-      // encontramos as semanas que se sobrepõem ao bucket.
       const bucketStart = bucket.label; // "yyyy-MM-dd"
-      const bucketWeekly = weeklyRows.filter((w) => {
-        // Inclui a semana se a data de início da semana é próxima ao bucket
-        // (semana de 7 dias que engloba ou precede o bucket)
-        return w.week_start <= bucketStart &&
-          toDateKey(new Date(new Date(w.week_start).getTime() + 6 * 24 * 60 * 60 * 1000)) >= bucketStart;
-      });
+      const bucketEnd =
+        daySpan > 21 ? toDateKey(new Date(new Date(`${bucketStart}T00:00:00`).getTime() + 6 * 24 * 60 * 60 * 1000)) : bucketStart;
 
-      const bucketWeeklyAgg = bucketWeekly.length > 0
-        ? aggregateWeeklyMetrics(bucketWeekly)
-        : // Fallback: distribui o investimento proporcional ao número de buckets
-          {
-            investment: weeklyAgg.investment / Math.max(1, buckets.length),
-            impressions: 0,
-            reach: 0,
-            reportedLeads: weeklyAgg.reportedLeads / Math.max(1, buckets.length),
-            weeksWithData: weeklyAgg.weeksWithData > 0 ? 1 : 0,
-          };
-
-      const bucketMetrics = computeFunnelMetrics(bucket.agg, bucketWeeklyAgg);
+      const bucketAdRows = adRows.filter(
+        (r) => r.metric_date >= bucketStart && r.metric_date <= bucketEnd
+      );
+      const bucketAdAgg = aggregateDailyAdMetrics(bucketAdRows);
+      const bucketMetrics = computeFunnelMetrics(bucket.agg, bucketAdAgg);
 
       for (const key of SPARKLINE_KEYS) {
         const value = bucketMetrics[key];
@@ -291,7 +269,7 @@ export function useDashboardDerived(
       }
     }
     return series;
-  }, [buckets, weeklyRows, weeklyAgg]);
+  }, [buckets, adRows, daySpan]);
 
   return {
     agg,

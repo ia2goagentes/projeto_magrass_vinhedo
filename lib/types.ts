@@ -34,6 +34,19 @@ export type WeeklyAdMetric = {
   updated_at: string;
 };
 
+// Preenchida automaticamente 1x/dia pelo cron de sincronização com a Meta
+// (ver app/api/cron/sync-meta-ads). weekly_ad_metrics continua existindo só
+// como reserva manual.
+export type DailyAdMetric = {
+  id: string;
+  metric_date: string;
+  investment_amount: number;
+  impressions_count: number;
+  reach_count: number;
+  reported_leads_count: number;
+  updated_at: string;
+};
+
 export type MetricKey =
   | "cpl"
   | "cpa"

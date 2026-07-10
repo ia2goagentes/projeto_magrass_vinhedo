@@ -91,7 +91,3 @@ export function mondayOf(date: Date): Date {
 export function lastCompletedMonday(): Date {
   return subWeeks(mondayOf(new Date()), 1);
 }
-
-export function weeklyMetricsOverlapRange(range: DateRange): DateRange {
-  return { start: subDays(range.start, 6), end: range.end };
-}

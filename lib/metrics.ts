@@ -1,5 +1,5 @@
 import { format, startOfWeek } from "date-fns";
-import { DailyEntry, Goal, GoalDirection, MetricKey, WeeklyAdMetric } from "@/lib/types";
+import { DailyAdMetric, DailyEntry, Goal, GoalDirection, MetricKey, WeeklyAdMetric } from "@/lib/types";
 
 export type Aggregated = {
   leads: number;
@@ -54,6 +54,21 @@ const EMPTY_WEEKLY: WeeklyAggregated = {
 };
 
 export function aggregateWeeklyMetrics(rows: WeeklyAdMetric[]): WeeklyAggregated {
+  return rows.reduce<WeeklyAggregated>(
+    (acc, row) => ({
+      investment: acc.investment + Number(row.investment_amount),
+      impressions: acc.impressions + row.impressions_count,
+      reach: acc.reach + row.reach_count,
+      reportedLeads: acc.reportedLeads + row.reported_leads_count,
+      weeksWithData: acc.weeksWithData + 1,
+    }),
+    { ...EMPTY_WEEKLY }
+  );
+}
+
+// Mesma agregação de aggregateWeeklyMetrics, mas para as linhas diárias
+// preenchidas automaticamente pelo cron da Meta (granularidade de dia, não semana).
+export function aggregateDailyAdMetrics(rows: DailyAdMetric[]): WeeklyAggregated {
   return rows.reduce<WeeklyAggregated>(
     (acc, row) => ({
       investment: acc.investment + Number(row.investment_amount),

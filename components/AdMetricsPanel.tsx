@@ -1,15 +1,14 @@
-import { WeeklyAdMetric } from "@/lib/types";
+import { DailyAdMetric } from "@/lib/types";
 
-function formatWeekLabel(weekStart: string) {
-  const start = new Date(`${weekStart}T00:00:00`);
-  const end = new Date(start);
-  end.setDate(end.getDate() + 6);
-  const fmt = (d: Date) => d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
-  return `${fmt(start)} a ${fmt(end)}`;
+function formatDayLabel(dateKey: string) {
+  return new Date(`${dateKey}T00:00:00`).toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+  });
 }
 
-export function AdMetricsPanel({ weeklyRows }: { weeklyRows: WeeklyAdMetric[] }) {
-  const latest = [...weeklyRows].sort((a, b) => b.week_start.localeCompare(a.week_start))[0];
+export function AdMetricsPanel({ adRows }: { adRows: DailyAdMetric[] }) {
+  const latest = [...adRows].sort((a, b) => b.metric_date.localeCompare(a.metric_date))[0];
 
   return (
     <div className="rounded-2xl border border-border-hairline bg-surface-card p-5 shadow-sm">
@@ -17,11 +16,11 @@ export function AdMetricsPanel({ weeklyRows }: { weeklyRows: WeeklyAdMetric[] })
 
       {!latest ? (
         <p className="mt-3 text-sm text-ink-secondary">
-          Sem lançamento semanal de anúncios nesse período.
+          Sem dados de anúncios nesse período.
         </p>
       ) : (
         <>
-          <p className="mt-1 text-xs text-ink-muted">Semana de {formatWeekLabel(latest.week_start)}</p>
+          <p className="mt-1 text-xs text-ink-muted">Dia {formatDayLabel(latest.metric_date)} (sincronizado automaticamente)</p>
 
           <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div>
@@ -52,12 +51,6 @@ export function AdMetricsPanel({ weeklyRows }: { weeklyRows: WeeklyAdMetric[] })
               </p>
             </div>
           </div>
-
-          {latest.notes && (
-            <p className="mt-4 rounded-lg bg-ink-primary/5 p-3 text-sm text-ink-secondary">
-              {latest.notes}
-            </p>
-          )}
         </>
       )}
     </div>
