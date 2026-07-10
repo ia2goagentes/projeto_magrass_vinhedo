@@ -1,3 +1,5 @@
+import { formatDistanceToNowStrict } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { LeadStatus } from "@/lib/types";
 
 // Ordem funil-friendly das colunas do Kanban
@@ -45,6 +47,10 @@ export function formatDate(iso: string): string {
     month: "2-digit",
     year: "numeric",
   });
+}
+
+export function formatRelativeDate(iso: string): string {
+  return formatDistanceToNowStrict(new Date(iso), { locale: ptBR, addSuffix: true });
 }
 
 export function formatDateTime(iso: string): string {

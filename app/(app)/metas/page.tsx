@@ -103,7 +103,7 @@ export default function MetasPage() {
   if (loading) return <p className="text-sm text-ink-secondary">Carregando...</p>;
 
   return (
-    <div className="max-w-3xl">
+    <div className="mx-auto max-w-3xl">
       <h1 className="text-2xl font-bold tracking-tight text-ink-primary">Metas</h1>
       <p className="mt-1 text-sm text-ink-secondary">
         Defina a meta de cada métrica. O dashboard usa isso para colorir

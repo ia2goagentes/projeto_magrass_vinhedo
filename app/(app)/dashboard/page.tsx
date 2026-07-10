@@ -70,7 +70,7 @@ export default function DashboardPage() {
   const { loading, errorMessage } = rangeData;
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6">
       {/* Cabeçalho com saudação */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>

@@ -17,7 +17,7 @@ import { Lead, LeadStatus } from "@/lib/types";
 import { KanbanColumn } from "@/components/leads/KanbanColumn";
 import { LeadCard } from "@/components/leads/LeadCard";
 import { LeadDetailDrawer } from "@/components/leads/LeadDetailDrawer";
-import { LEAD_STATUS_ORDER } from "@/components/leads/leadStatusStyle";
+import { LEAD_STATUS_COLOR_VAR, LEAD_STATUS_ORDER } from "@/components/leads/leadStatusStyle";
 
 // ─── Toast ─────────────────────────────────────────────────────────────────────
 
@@ -201,7 +201,11 @@ export default function LeadsPage() {
           <DragOverlay>
             {activeLead && (
               <div className="w-72 rotate-2">
-                <LeadCard lead={activeLead} onOpen={() => {}} />
+                <LeadCard
+                  lead={activeLead}
+                  color={LEAD_STATUS_COLOR_VAR[activeLead.status]}
+                  onOpen={() => {}}
+                />
               </div>
             )}
           </DragOverlay>

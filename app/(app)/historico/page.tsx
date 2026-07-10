@@ -27,7 +27,7 @@ export default function HistoricoPage() {
   const [tab, setTab] = useState<"diario" | "semanal">("diario");
 
   return (
-    <div className="max-w-4xl">
+    <div className="mx-auto max-w-4xl">
       <h1 className="text-2xl font-bold tracking-tight text-ink-primary">Histórico</h1>
       <p className="mt-1 text-sm text-ink-secondary">
         Todos os lançamentos já registrados, do mais recente pro mais antigo.

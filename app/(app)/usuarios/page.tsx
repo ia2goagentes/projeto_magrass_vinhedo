@@ -88,7 +88,7 @@ export default function UsuariosPage() {
   }
 
   return (
-    <div className="max-w-3xl">
+    <div className="mx-auto max-w-3xl">
       <h1 className="text-2xl font-bold tracking-tight text-ink-primary">Usuários</h1>
       <p className="mt-1 text-sm text-ink-secondary">
         Quem se cadastra em <code>/signup</code>{" "}

@@ -158,7 +158,7 @@ export default function LancamentoPage() {
   const showOverwriteWarning = entryExists && date === today;
 
   return (
-    <div className="max-w-2xl">
+    <div className="mx-auto max-w-2xl">
       <h1 className="text-2xl font-bold tracking-tight text-ink-primary">Lançamento diário</h1>
       <p className="mt-1 text-sm text-ink-secondary">
         Preencha os números do dia. Se já existir um lançamento para a data

@@ -116,7 +116,7 @@ export default function AnunciosPage() {
   }
 
   return (
-    <div className="max-w-2xl">
+    <div className="mx-auto max-w-2xl">
       <h1 className="text-2xl font-bold tracking-tight text-ink-primary">Anúncios (semanal)</h1>
       <p className="mt-1 text-sm text-ink-secondary">
         Lançamento semanal do tráfego pago — normalmente feito toda
