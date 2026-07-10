@@ -172,8 +172,8 @@ export default function LeadsPage() {
     <>
       <Toast items={toasts} onDismiss={dismissToast} />
 
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold tracking-tight text-ink-primary">Leads</h1>
           <p className="mt-1 text-sm text-ink-secondary">
             Arraste os cards entre as colunas para atualizar o status, ou clique para ver os detalhes.
@@ -181,7 +181,7 @@ export default function LeadsPage() {
         </div>
         <button
           onClick={() => setAddModalOpen(true)}
-          className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-white transition"
+          className="flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-white transition sm:w-auto sm:shrink-0"
           style={{ background: "var(--brand-gradient)" }}
         >
           <Plus size={16} />
