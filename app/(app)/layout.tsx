@@ -28,8 +28,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="min-h-screen bg-surface-page lg:flex">
       <Sidebar role={profile.role} name={profile.name} />
-      <div className="lg:pl-64 lg:flex-1">
-        <main className="px-4 pt-5 pb-24 sm:px-6 sm:pt-6 sm:pb-24 lg:px-8 lg:py-8">{children}</main>
+      {/* min-w-0: sem isso o item flex não encolhe abaixo da largura do conteúdo,
+          e conteúdo largo (ex.: Kanban de leads) faz a página inteira rolar na
+          horizontal em vez de o scroll ficar contido no próprio componente. */}
+      <div className="min-w-0 lg:flex-1 lg:pl-64">
+        <main className="min-w-0 px-4 pt-5 pb-24 sm:px-6 sm:pt-6 sm:pb-24 lg:px-8 lg:py-8">
+          {children}
+        </main>
       </div>
     </div>
   );
