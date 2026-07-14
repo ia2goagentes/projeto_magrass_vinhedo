@@ -46,7 +46,6 @@ export default function LancamentoPage() {
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
-  const [validationError, setValidationError] = useState("");
   // UX-02: track whether an entry already exists for the selected date
   const [entryExists, setEntryExists] = useState(false);
 
@@ -57,7 +56,6 @@ export default function LancamentoPage() {
       setLoading(true);
       setSavedAt(null);
       setErrorMessage("");
-      setValidationError("");
 
       const supabase = createClient();
       const { data, error } = await supabase
@@ -95,32 +93,9 @@ export default function LancamentoPage() {
     };
   }, [date]);
 
-  // UX-03: validate attendance counts against appointments
-  function validate(): boolean {
-    const appointments = Number(form.appointments_count) || 0;
-    const attendances = Number(form.attendances_count) || 0;
-    const noShows = Number(form.no_shows_count) || 0;
-    const rescheduled = Number(form.rescheduled_count) || 0;
-
-    const total = attendances + noShows + rescheduled;
-
-    if (total > appointments) {
-      setValidationError(
-        `A soma de comparecimentos (${attendances}), no-shows (${noShows}) e remarcados (${rescheduled}) = ${total}, que excede o total de agendamentos (${appointments}).`
-      );
-      return false;
-    }
-
-    setValidationError("");
-    return true;
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErrorMessage("");
-
-    if (!validate()) return;
-
     setSaving(true);
 
     const supabase = createClient();
@@ -161,8 +136,11 @@ export default function LancamentoPage() {
     <div className="mx-auto max-w-2xl">
       <h1 className="text-2xl font-bold tracking-tight text-ink-primary">Lançamento diário</h1>
       <p className="mt-1 text-sm text-ink-secondary">
-        Preencha os números do dia. Se já existir um lançamento para a data
-        escolhida, os campos aparecem preenchidos e você pode corrigi-los.
+        Preencha os números do dia. Cada campo é independente: os comparecimentos
+        de hoje podem vir de agendamentos feitos em dias anteriores, então não
+        precisam bater com os agendamentos marcados hoje. Se já existir um
+        lançamento para a data escolhida, os campos aparecem preenchidos e você
+        pode corrigi-los.
       </p>
 
       <div className="mt-6 rounded-2xl border border-border-hairline bg-surface-card p-5 shadow-sm sm:p-6">
@@ -202,25 +180,15 @@ export default function LancamentoPage() {
                     min="0"
                     step={field.step ?? "1"}
                     value={form[field.key]}
-                    onChange={(e) => {
-                      setForm({ ...form, [field.key]: e.target.value });
-                      // Clear validation error as user edits
-                      setValidationError("");
-                    }}
+                    onChange={(e) =>
+                      setForm({ ...form, [field.key]: e.target.value })
+                    }
                     placeholder="0"
                     className={inputClass}
                   />
                 </div>
               ))}
             </div>
-
-            {/* UX-03: inline validation error */}
-            {validationError && (
-              <div className="mt-4 flex items-start gap-2 rounded-lg border border-status-critical/40 bg-status-critical/10 px-3 py-2.5 text-sm text-status-critical">
-                <AlertTriangle size={16} className="mt-0.5 shrink-0" />
-                <span>{validationError}</span>
-              </div>
-            )}
 
             <button
               type="submit"

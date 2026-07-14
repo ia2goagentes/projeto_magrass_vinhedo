@@ -41,7 +41,7 @@
 
 - [ ] **UX-01**: Usuário pode recuperar senha via `/forgot-password` (email de reset enviado pelo Supabase)
 - [ ] **UX-02**: Formulário de lançamento exibe "Atualizar lançamento" e aviso de sobrescrita quando entrada do dia já existe
-- [ ] **UX-03**: Formulário de lançamento valida que atendimentos + no-shows + reagendados não excedem agendamentos
+- [x] **UX-03**: ~~Formulário de lançamento valida que atendimentos + no-shows + reagendados não excedem agendamentos~~ — **cancelado**: os números de um mesmo dia são coortes diferentes (quem comparece hoje foi agendado dias antes), então a soma legitimamente excede os agendamentos do dia. Validação removida.
 - [ ] **UX-04**: Ícone do ThemeToggle inicializa no estado correto (sem flash ao carregar)
 
 ---

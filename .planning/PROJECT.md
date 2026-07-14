@@ -45,7 +45,7 @@ SDR e gestor enxergam o funil completo — de lead a venda fechada — em um ún
 - [ ] Gráfico de funil com % claramente legíveis
 - [ ] Fluxo de recuperação de senha (forgot password)
 - [ ] Confirmação visual ao sobrescrever lançamento existente
-- [ ] Validação: atendimentos + no-shows + reagendados ≤ agendamentos
+- [x] ~~Validação: atendimentos + no-shows + reagendados ≤ agendamentos~~ — cancelado (coortes diferentes por dia; a regra não vale na operação real)
 
 ### Out of Scope
 
