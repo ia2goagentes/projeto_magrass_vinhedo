@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   DndContext,
   DragEndEvent,
@@ -15,6 +15,12 @@ import { Bell, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Lead, LeadStatus } from "@/lib/types";
 import { AddLeadModal } from "@/components/leads/AddLeadModal";
+import {
+  EMPTY_LEAD_FILTERS,
+  LeadFilters,
+  LeadsFilterBar,
+  matchesLeadFilters,
+} from "@/components/leads/LeadsFilterBar";
 import { KanbanColumn } from "@/components/leads/KanbanColumn";
 import { LeadCard } from "@/components/leads/LeadCard";
 import { LeadDetailDrawer } from "@/components/leads/LeadDetailDrawer";
@@ -50,6 +56,7 @@ export default function LeadsPage() {
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [filters, setFilters] = useState<LeadFilters>(EMPTY_LEAD_FILTERS);
   const toastCounter = useRef(0);
 
   const sensors = useSensors(
@@ -168,6 +175,13 @@ export default function LeadsPage() {
   const selectedLead = leads.find((l) => l.id === selectedLeadId) ?? null;
   const activeLead = leads.find((l) => l.id === activeId) ?? null;
 
+  // Busca por nome + recorte de data. O Kanban só renderiza o que passa aqui.
+  const filteredLeads = useMemo(
+    () => leads.filter((lead) => matchesLeadFilters(lead, filters)),
+    [leads, filters]
+  );
+  const noResults = !loading && leads.length > 0 && filteredLeads.length === 0;
+
   return (
     <>
       <Toast items={toasts} onDismiss={dismissToast} />
@@ -191,6 +205,21 @@ export default function LeadsPage() {
 
       {addModalOpen && <AddLeadModal onClose={() => setAddModalOpen(false)} />}
 
+      {!loading && (
+        <LeadsFilterBar
+          value={filters}
+          onChange={setFilters}
+          resultCount={filteredLeads.length}
+          totalCount={leads.length}
+        />
+      )}
+
+      {noResults && (
+        <p className="mt-6 rounded-2xl border border-border-hairline bg-surface-card px-4 py-6 text-center text-sm text-ink-secondary">
+          Nenhum lead encontrado com esses filtros.
+        </p>
+      )}
+
       {loading ? (
         <div className="mt-6 flex gap-4 overflow-x-auto pb-4">
           {LEAD_STATUS_ORDER.map((status) => (
@@ -211,7 +240,7 @@ export default function LeadsPage() {
               <KanbanColumn
                 key={status}
                 status={status}
-                leads={leads.filter((l) => l.status === status)}
+                leads={filteredLeads.filter((l) => l.status === status)}
                 activeId={activeId}
                 onOpenLead={setSelectedLeadId}
               />
