@@ -216,7 +216,7 @@ export default function LeadsPage() {
       <Toast items={toasts} onDismiss={dismissToast} />
 
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-ink-primary">Leads</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-ink-primary">CRM | Leads</h1>
         <p className="mt-1 text-sm text-ink-secondary">
           Arraste os cards entre as colunas para atualizar o status, ou clique para ver os detalhes.
         </p>
