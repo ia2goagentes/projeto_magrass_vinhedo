@@ -118,7 +118,6 @@ export type Lead = {
   procedure_interest: string | null;
   tags: string[];
   scheduled_at: string | null;
-  email: string | null;
   assigned_to: string | null;
   created_at: string;
   updated_at: string;

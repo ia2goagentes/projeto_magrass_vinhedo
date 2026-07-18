@@ -270,8 +270,7 @@ alter table public.leads add column if not exists procedure_interest text;
 alter table public.leads add column if not exists tags text[] not null default '{}';
 alter table public.leads add column if not exists scheduled_at timestamptz;
 
--- CRM-03: e-mail do lead + atendente responsável (SDR/gestor atribuído).
-alter table public.leads add column if not exists email text;
+-- CRM-03: atendente responsável (SDR/gestor atribuído).
 alter table public.leads add column if not exists assigned_to uuid references public.profiles(id);
 
 create or replace function public.set_updated_at()

@@ -42,7 +42,6 @@ export function LeadDetailDrawer({
   const [noteValue, setNoteValue] = useState(lead?.notes ?? "");
   const [savingNote, setSavingNote] = useState(false);
   const [procedureValue, setProcedureValue] = useState(lead?.procedure_interest ?? "");
-  const [emailValue, setEmailValue] = useState(lead?.email ?? "");
   const [tagInput, setTagInput] = useState("");
 
   if (!lead) return null;
@@ -67,16 +66,6 @@ export function LeadDetailDrawer({
       .update({ procedure_interest: procedureValue || null })
       .eq("id", lead.id);
     if (!error) onFieldSaved(lead.id, { procedure_interest: procedureValue || null });
-  }
-
-  async function handleSaveEmail() {
-    if (!lead || emailValue === (lead.email ?? "")) return;
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("leads")
-      .update({ email: emailValue || null })
-      .eq("id", lead.id);
-    if (!error) onFieldSaved(lead.id, { email: emailValue || null });
   }
 
   async function handleOriginChange(value: string) {
@@ -226,20 +215,6 @@ export function LeadDetailDrawer({
             <h3 className="text-sm font-semibold text-ink-primary">Dados do lead</h3>
 
             <div className="mt-3 space-y-4">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">
-                  E-mail
-                </p>
-                <input
-                  type="email"
-                  value={emailValue}
-                  onChange={(e) => setEmailValue(e.target.value)}
-                  onBlur={handleSaveEmail}
-                  placeholder="nome@email.com"
-                  className="mt-1 w-full rounded-lg border border-border-hairline bg-surface-page px-3 py-2 text-sm text-ink-primary outline-none focus:border-accent"
-                />
-              </div>
-
               <div>
                 <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">
                   Origem
