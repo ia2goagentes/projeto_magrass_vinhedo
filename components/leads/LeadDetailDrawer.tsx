@@ -5,22 +5,35 @@ import { X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Lead, LeadStatus, LEAD_ORIGIN_OPTIONS, LEAD_STATUS_LABELS } from "@/lib/types";
 import {
-  formatDateTime,
+  formatRelativeDate,
   formatWhatsApp,
   humanizeFormAnswerKey,
   toDatetimeLocalValue,
+  LEAD_STATUS_COLOR_VAR,
+  LEAD_STATUS_ORDER,
 } from "./leadStatusStyle";
 
-const ALL_STATUSES = Object.keys(LEAD_STATUS_LABELS) as LeadStatus[];
+const ALL_STATUSES = LEAD_STATUS_ORDER;
+
+// Campos que já aparecem em "Respostas do formulário" ou são padrão do
+// webhook — o resto (se algum dia vier campanha/anúncio/utm) cai em
+// "Rastreamento" automaticamente, sem precisar listar nome por nome.
+const TRACKING_KEY_PATTERN = /campanha|campaign|adset|criativo|creative|utm_|anuncio|ad_name|midia|m[ií]dia|termo/i;
+
+function initialFor(name: string) {
+  return name.trim().charAt(0).toUpperCase() || "?";
+}
 
 export function LeadDetailDrawer({
   lead,
+  assignableUsers,
   onClose,
   onStatusChange,
   onNoteSaved,
   onFieldSaved,
 }: {
   lead: Lead | null;
+  assignableUsers: { id: string; name: string }[];
   onClose: () => void;
   onStatusChange: (id: string, status: LeadStatus) => void;
   onNoteSaved: (id: string, notes: string) => void;
@@ -29,6 +42,7 @@ export function LeadDetailDrawer({
   const [noteValue, setNoteValue] = useState(lead?.notes ?? "");
   const [savingNote, setSavingNote] = useState(false);
   const [procedureValue, setProcedureValue] = useState(lead?.procedure_interest ?? "");
+  const [emailValue, setEmailValue] = useState(lead?.email ?? "");
   const [tagInput, setTagInput] = useState("");
 
   if (!lead) return null;
@@ -55,11 +69,32 @@ export function LeadDetailDrawer({
     if (!error) onFieldSaved(lead.id, { procedure_interest: procedureValue || null });
   }
 
+  async function handleSaveEmail() {
+    if (!lead || emailValue === (lead.email ?? "")) return;
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("leads")
+      .update({ email: emailValue || null })
+      .eq("id", lead.id);
+    if (!error) onFieldSaved(lead.id, { email: emailValue || null });
+  }
+
   async function handleOriginChange(value: string) {
     if (!lead) return;
     const supabase = createClient();
     const { error } = await supabase.from("leads").update({ origin: value }).eq("id", lead.id);
     if (!error) onFieldSaved(lead.id, { origin: value });
+  }
+
+  async function handleAssignedToChange(value: string) {
+    if (!lead) return;
+    const assignedTo = value || null;
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("leads")
+      .update({ assigned_to: assignedTo })
+      .eq("id", lead.id);
+    if (!error) onFieldSaved(lead.id, { assigned_to: assignedTo });
   }
 
   async function handleScheduledAtChange(value: string) {
@@ -95,6 +130,10 @@ export function LeadDetailDrawer({
   }
 
   const formAnswerEntries = Object.entries(lead.form_answers ?? {});
+  const trackingEntries = Object.entries(lead.raw_payload ?? {}).filter(([key]) =>
+    TRACKING_KEY_PATTERN.test(key)
+  );
+  const statusColor = LEAD_STATUS_COLOR_VAR[lead.status];
 
   return (
     <>
@@ -103,9 +142,17 @@ export function LeadDetailDrawer({
         onClick={onClose}
         aria-hidden
       />
-      <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col overflow-y-auto border-l border-border-hairline bg-surface-card shadow-xl">
+      <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-lg flex-col overflow-y-auto border-l border-border-hairline bg-surface-card shadow-xl">
         <div className="flex items-center justify-between border-b border-border-hairline px-5 py-4">
-          <h2 className="text-lg font-bold text-ink-primary">{lead.name}</h2>
+          <div className="flex items-center gap-3">
+            <span
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-base font-semibold"
+              style={{ background: `color-mix(in srgb, ${statusColor} 15%, transparent)`, color: statusColor }}
+            >
+              {initialFor(lead.name)}
+            </span>
+            <h2 className="text-lg font-bold text-ink-primary">{lead.name}</h2>
+          </div>
           <button
             onClick={onClose}
             className="rounded-lg p-1.5 text-ink-secondary hover:bg-ink-primary/5"
@@ -116,18 +163,28 @@ export function LeadDetailDrawer({
         </div>
 
         <div className="flex flex-1 flex-col gap-5 px-5 py-5">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">
-              WhatsApp
-            </p>
-            <a
-              href={`https://wa.me/55${lead.whatsapp.replace(/\D/g, "").replace(/^55/, "")}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-1 inline-block text-sm font-medium text-accent hover:underline"
-            >
-              {formatWhatsApp(lead.whatsapp)}
-            </a>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">
+                WhatsApp
+              </p>
+              <a
+                href={`https://wa.me/55${lead.whatsapp.replace(/\D/g, "").replace(/^55/, "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1 inline-block text-sm font-medium text-accent hover:underline"
+              >
+                {formatWhatsApp(lead.whatsapp)}
+              </a>
+            </div>
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">
+                Criado
+              </p>
+              <p className="mt-1 text-sm font-medium text-ink-primary">
+                {formatRelativeDate(lead.created_at)}
+              </p>
+            </div>
           </div>
 
           <div>
@@ -149,6 +206,109 @@ export function LeadDetailDrawer({
 
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">
+              Atendente
+            </p>
+            <select
+              value={lead.assigned_to ?? ""}
+              onChange={(e) => handleAssignedToChange(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-border-hairline bg-surface-page px-3 py-2 text-sm text-ink-primary outline-none focus:border-accent"
+            >
+              <option value="">Sem atendente</option>
+              {assignableUsers.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold text-ink-primary">Dados do lead</h3>
+
+            <div className="mt-3 space-y-4">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">
+                  E-mail
+                </p>
+                <input
+                  type="email"
+                  value={emailValue}
+                  onChange={(e) => setEmailValue(e.target.value)}
+                  onBlur={handleSaveEmail}
+                  placeholder="nome@email.com"
+                  className="mt-1 w-full rounded-lg border border-border-hairline bg-surface-page px-3 py-2 text-sm text-ink-primary outline-none focus:border-accent"
+                />
+              </div>
+
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">
+                  Origem
+                </p>
+                <select
+                  value={lead.origin ?? ""}
+                  onChange={(e) => handleOriginChange(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-border-hairline bg-surface-page px-3 py-2 text-sm text-ink-primary outline-none focus:border-accent"
+                >
+                  <option value="" disabled>
+                    Selecione a origem
+                  </option>
+                  {LEAD_ORIGIN_OPTIONS.map((o) => (
+                    <option key={o} value={o}>
+                      {o}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">
+                  Procedimento de interesse
+                </p>
+                <input
+                  type="text"
+                  value={procedureValue}
+                  onChange={(e) => setProcedureValue(e.target.value)}
+                  onBlur={handleSaveProcedure}
+                  placeholder="Ex: Emagrecimento, Botox..."
+                  className="mt-1 w-full rounded-lg border border-border-hairline bg-surface-page px-3 py-2 text-sm text-ink-primary outline-none focus:border-accent"
+                />
+              </div>
+
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">
+                  Tags
+                </p>
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {lead.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent"
+                    >
+                      {tag}
+                      <button
+                        onClick={() => handleRemoveTag(tag)}
+                        aria-label={`Remover tag ${tag}`}
+                        className="hover:opacity-70"
+                      >
+                        <X size={11} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+                <input
+                  type="text"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={handleAddTag}
+                  placeholder="Digite e pressione Enter"
+                  className="mt-2 w-full rounded-lg border border-border-hairline bg-surface-page px-3 py-2 text-sm text-ink-primary outline-none focus:border-accent"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">
               Agendamento
             </p>
             <input
@@ -161,67 +321,22 @@ export function LeadDetailDrawer({
 
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">
-              Origem
+              Rastreamento
             </p>
-            <select
-              value={lead.origin ?? ""}
-              onChange={(e) => handleOriginChange(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-border-hairline bg-surface-page px-3 py-2 text-sm text-ink-primary outline-none focus:border-accent"
-            >
-              <option value="" disabled>
-                Selecione a origem
-              </option>
-              {LEAD_ORIGIN_OPTIONS.map((o) => (
-                <option key={o} value={o}>
-                  {o}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">
-              Procedimento de interesse
-            </p>
-            <input
-              type="text"
-              value={procedureValue}
-              onChange={(e) => setProcedureValue(e.target.value)}
-              onBlur={handleSaveProcedure}
-              placeholder="Ex: Emagrecimento, Botox..."
-              className="mt-1 w-full rounded-lg border border-border-hairline bg-surface-page px-3 py-2 text-sm text-ink-primary outline-none focus:border-accent"
-            />
-          </div>
-
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">
-              Tags
-            </p>
-            <div className="mt-1.5 flex flex-wrap gap-1.5">
-              {lead.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent"
-                >
-                  {tag}
-                  <button
-                    onClick={() => handleRemoveTag(tag)}
-                    aria-label={`Remover tag ${tag}`}
-                    className="hover:opacity-70"
-                  >
-                    <X size={11} />
-                  </button>
-                </span>
-              ))}
-            </div>
-            <input
-              type="text"
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={handleAddTag}
-              placeholder="Digite e pressione Enter"
-              className="mt-2 w-full rounded-lg border border-border-hairline bg-surface-page px-3 py-2 text-sm text-ink-primary outline-none focus:border-accent"
-            />
+            {trackingEntries.length === 0 ? (
+              <p className="mt-1 text-sm italic text-ink-muted">
+                Nenhum dado de campanha/anúncio disponível ainda para esse lead.
+              </p>
+            ) : (
+              <div className="mt-2 space-y-2">
+                {trackingEntries.map(([key, value]) => (
+                  <div key={key} className="flex items-center justify-between text-sm">
+                    <span className="text-ink-secondary">{humanizeFormAnswerKey(key)}</span>
+                    <span className="font-medium text-ink-primary">{String(value)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div>
@@ -263,10 +378,6 @@ export function LeadDetailDrawer({
             {savingNote && (
               <p className="mt-1 text-xs text-ink-muted">Salvando...</p>
             )}
-          </div>
-
-          <div className="mt-auto border-t border-border-hairline pt-3 text-xs text-ink-muted">
-            Criado em {formatDateTime(lead.created_at)}
           </div>
         </div>
       </div>

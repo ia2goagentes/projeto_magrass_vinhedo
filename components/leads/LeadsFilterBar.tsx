@@ -166,7 +166,7 @@ export function LeadsFilterBar({
   const isFiltering = value.search.trim() !== "" || value.presetKey !== "all";
 
   return (
-    <div className="mt-6 rounded-2xl border border-border-hairline bg-surface-card p-4 shadow-sm">
+    <div className="rounded-2xl border border-border-hairline bg-surface-card p-4 shadow-sm">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative w-full sm:w-72">
           <Search

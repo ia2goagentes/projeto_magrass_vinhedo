@@ -24,6 +24,7 @@ import {
 import { KanbanColumn } from "@/components/leads/KanbanColumn";
 import { LeadCard } from "@/components/leads/LeadCard";
 import { LeadDetailDrawer } from "@/components/leads/LeadDetailDrawer";
+import { LeadStatsBar } from "@/components/leads/LeadStatsBar";
 import { LEAD_STATUS_COLOR_VAR, LEAD_STATUS_ORDER } from "@/components/leads/leadStatusStyle";
 
 // ─── Toast ─────────────────────────────────────────────────────────────────────
@@ -57,6 +58,7 @@ export default function LeadsPage() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [filters, setFilters] = useState<LeadFilters>(EMPTY_LEAD_FILTERS);
+  const [assignableUsers, setAssignableUsers] = useState<{ id: string; name: string }[]>([]);
   const toastCounter = useRef(0);
 
   const sensors = useSensors(
@@ -99,6 +101,27 @@ export default function LeadsPage() {
     }
 
     fetchLeads();
+    return () => { active = false; };
+  }, []);
+
+  // ── Usuários atribuíveis (atendente) ────────────────────────────────────────
+
+  useEffect(() => {
+    let active = true;
+
+    async function fetchAssignableUsers() {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, name")
+        .in("role", ["sdr", "gestor"])
+        .order("name");
+
+      if (!active || error) return;
+      setAssignableUsers(data ?? []);
+    }
+
+    fetchAssignableUsers();
     return () => { active = false; };
   }, []);
 
@@ -182,37 +205,48 @@ export default function LeadsPage() {
   );
   const noResults = !loading && leads.length > 0 && filteredLeads.length === 0;
 
+  const assignedNameById = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const u of assignableUsers) map[u.id] = u.name;
+    return map;
+  }, [assignableUsers]);
+
   return (
     <>
       <Toast items={toasts} onDismiss={dismissToast} />
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-bold tracking-tight text-ink-primary">Leads</h1>
-          <p className="mt-1 text-sm text-ink-secondary">
-            Arraste os cards entre as colunas para atualizar o status, ou clique para ver os detalhes.
-          </p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-ink-primary">Leads</h1>
+        <p className="mt-1 text-sm text-ink-secondary">
+          Arraste os cards entre as colunas para atualizar o status, ou clique para ver os detalhes.
+        </p>
+      </div>
+
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-start">
         <button
           onClick={() => setAddModalOpen(true)}
-          className="flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-white transition sm:w-auto sm:shrink-0"
+          className="flex w-full shrink-0 items-center justify-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-medium text-white transition sm:w-auto"
           style={{ background: "var(--brand-gradient)" }}
         >
           <Plus size={16} />
           Novo lead
         </button>
+
+        {!loading && (
+          <div className="flex-1">
+            <LeadsFilterBar
+              value={filters}
+              onChange={setFilters}
+              resultCount={filteredLeads.length}
+              totalCount={leads.length}
+            />
+          </div>
+        )}
       </div>
 
       {addModalOpen && <AddLeadModal onClose={() => setAddModalOpen(false)} />}
 
-      {!loading && (
-        <LeadsFilterBar
-          value={filters}
-          onChange={setFilters}
-          resultCount={filteredLeads.length}
-          totalCount={leads.length}
-        />
-      )}
+      {!loading && <LeadStatsBar leads={filteredLeads} />}
 
       {noResults && (
         <p className="mt-6 rounded-2xl border border-border-hairline bg-surface-card px-4 py-6 text-center text-sm text-ink-secondary">
@@ -242,6 +276,7 @@ export default function LeadsPage() {
                 status={status}
                 leads={filteredLeads.filter((l) => l.status === status)}
                 activeId={activeId}
+                assignedNameById={assignedNameById}
                 onOpenLead={setSelectedLeadId}
               />
             ))}
@@ -253,6 +288,7 @@ export default function LeadsPage() {
                 <LeadCard
                   lead={activeLead}
                   color={LEAD_STATUS_COLOR_VAR[activeLead.status]}
+                  assignedName={activeLead.assigned_to ? assignedNameById[activeLead.assigned_to] ?? null : null}
                   onOpen={() => {}}
                 />
               </div>
@@ -264,6 +300,7 @@ export default function LeadsPage() {
       <LeadDetailDrawer
         key={selectedLead?.id ?? "closed"}
         lead={selectedLead}
+        assignableUsers={assignableUsers}
         onClose={() => setSelectedLeadId(null)}
         onStatusChange={handleStatusChange}
         onNoteSaved={handleNoteSaved}

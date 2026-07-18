@@ -9,11 +9,13 @@ export function KanbanColumn({
   status,
   leads,
   activeId,
+  assignedNameById,
   onOpenLead,
 }: {
   status: LeadStatus;
   leads: Lead[];
   activeId: string | null;
+  assignedNameById: Record<string, string>;
   onOpenLead: (id: string) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
@@ -62,6 +64,7 @@ export function KanbanColumn({
               key={lead.id}
               lead={lead}
               color={color}
+              assignedName={lead.assigned_to ? assignedNameById[lead.assigned_to] ?? null : null}
               onOpen={onOpenLead}
               dragging={activeId === lead.id}
             />
