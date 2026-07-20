@@ -3,7 +3,13 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { Lead, LeadStatus, LEAD_ORIGIN_OPTIONS, LEAD_STATUS_LABELS } from "@/lib/types";
+import {
+  Lead,
+  LeadStatus,
+  LEAD_ORIGIN_OPTIONS,
+  LEAD_STATUS_LABELS,
+  LEAD_TRACKING_KEYS,
+} from "@/lib/types";
 import {
   formatRelativeDate,
   formatWhatsApp,
@@ -15,10 +21,28 @@ import {
 
 const ALL_STATUSES = LEAD_STATUS_ORDER;
 
-// Campos que já aparecem em "Respostas do formulário" ou são padrão do
-// webhook — o resto (se algum dia vier campanha/anúncio/utm) cai em
-// "Rastreamento" automaticamente, sem precisar listar nome por nome.
-const TRACKING_KEY_PATTERN = /campanha|campaign|adset|criativo|creative|utm_|anuncio|ad_name|midia|m[ií]dia|termo/i;
+// Seção "Rastreamento": de onde o lead veio no anúncio (Meta Lead Ads). Só os
+// campos que ajudam o atendimento a entender a origem — rótulo em português, na
+// ordem campanha → conjunto → anúncio, sem IDs crus.
+const TRACKING_FIELDS: {
+  key: string;
+  label: string;
+  format?: (value: unknown) => string;
+}[] = [
+  { key: "campaign_name", label: "Campanha" },
+  { key: "adset_name", label: "Conjunto" },
+  { key: "ad_name", label: "Anúncio" },
+  {
+    key: "is_organic",
+    label: "Mídia",
+    format: (v) =>
+      v === true || v === "true" || v === 1 || v === "1" ? "Orgânico" : "Tráfego pago",
+  },
+];
+
+// Chaves de rastreamento não devem se repetir em "Respostas do formulário"
+// (leads antigos ainda podem tê-las gravadas lá).
+const TRACKING_KEYS = new Set<string>(LEAD_TRACKING_KEYS);
 
 function initialFor(name: string) {
   return name.trim().charAt(0).toUpperCase() || "?";
@@ -118,9 +142,14 @@ export function LeadDetailDrawer({
     saveTags(lead.tags.filter((t) => t !== tag));
   }
 
-  const formAnswerEntries = Object.entries(lead.form_answers ?? {});
-  const trackingEntries = Object.entries(lead.raw_payload ?? {}).filter(([key]) =>
-    TRACKING_KEY_PATTERN.test(key)
+  const payload = (lead.raw_payload ?? {}) as Record<string, unknown>;
+  const trackingEntries = TRACKING_FIELDS.flatMap((field) => {
+    const raw = payload[field.key];
+    if (raw === undefined || raw === null || raw === "") return [];
+    return [{ label: field.label, value: field.format ? field.format(raw) : String(raw) }];
+  });
+  const formAnswerEntries = Object.entries(lead.form_answers ?? {}).filter(
+    ([key]) => !TRACKING_KEYS.has(key)
   );
   const statusColor = LEAD_STATUS_COLOR_VAR[lead.status];
 
@@ -304,10 +333,10 @@ export function LeadDetailDrawer({
               </p>
             ) : (
               <div className="mt-2 space-y-2">
-                {trackingEntries.map(([key, value]) => (
-                  <div key={key} className="flex items-center justify-between text-sm">
-                    <span className="text-ink-secondary">{humanizeFormAnswerKey(key)}</span>
-                    <span className="font-medium text-ink-primary">{String(value)}</span>
+                {trackingEntries.map((entry) => (
+                  <div key={entry.label} className="flex items-center justify-between text-sm">
+                    <span className="text-ink-secondary">{entry.label}</span>
+                    <span className="font-medium text-ink-primary">{entry.value}</span>
                   </div>
                 ))}
               </div>

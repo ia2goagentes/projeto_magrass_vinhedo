@@ -103,6 +103,21 @@ export const LEAD_ORIGIN_OPTIONS = [
   "Outro",
 ] as const;
 
+// Chaves de rastreamento do anúncio (Meta Lead Ads, via Make). Ficam guardadas
+// em raw_payload e alimentam a seção "Rastreamento" da ficha do lead — mas NÃO
+// devem aparecer como "resposta de formulário" nem virar poluição na tela.
+export const LEAD_TRACKING_KEYS = [
+  "campaign_name",
+  "campaign_id",
+  "adset_name",
+  "adset_id",
+  "ad_name",
+  "ad_id",
+  "is_organic",
+  "origin",
+  "origem",
+] as const;
+
 export type Lead = {
   id: string;
   lead_source_id: string | null;
